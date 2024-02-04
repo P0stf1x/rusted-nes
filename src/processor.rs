@@ -6,7 +6,6 @@ pub mod execution;
 
 #[allow(non_snake_case)]
 #[allow(clippy::upper_case_acronyms)]
-#[allow(dead_code)] // TODO: remove me
 #[derive(Default)]
 #[derive(Debug)]
 pub struct CPU {
@@ -24,11 +23,9 @@ pub struct CPU {
     Z: bool,
     C: bool,
 
-    temp_var: u32,
-    vblank_cycle: u32,
+    executed_opcodes: u32,
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub enum MemoryMode {
     Implicit,
@@ -46,7 +43,6 @@ pub enum MemoryMode {
     IndirectY,
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub enum Opcodes {
     ADC(MemoryMode),
@@ -105,8 +101,6 @@ pub enum Opcodes {
     TXA(MemoryMode),
     TXS(MemoryMode),
     TYA(MemoryMode),
-
-    ECHO,
 }
 
 impl CPU {
@@ -294,9 +288,7 @@ impl CPU {
 
 impl CPU {
     pub fn push_stack(&mut self, data: u8, memory: &mut MEM) {
-        // println!("memory now {:#04X}", memory.read(0x0100 + self.S.0 as usize, 1));
         memory.data[0x0100 + self.S.0 as usize] = data;
-        // println!("memory after {:#04X}", memory.read(0x0100 + self.S.0 as usize, 1));
         self.S -= 1;
     }
 

@@ -69,4 +69,3 @@ impl CPU {
         self.PC += 1;
     }
 }
-

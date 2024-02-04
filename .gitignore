@@ -12,3 +12,15 @@ Cargo.lock
 
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
+
+
+# Project specific files
+
+# Execution logs
+*.log
+
+# Memory dumps
+*.dump
+
+# ines ROMs
+*.nes

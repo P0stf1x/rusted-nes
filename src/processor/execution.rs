@@ -22,7 +22,7 @@ impl CPU {
 
     pub fn execute(&mut self, memory: &mut MEM) -> Result<(), ()> {
         let pc_data = memory.read(self.PC.0 as usize, 1) as u8;
-        self.vblank_cycle += 1;
+        self.executed_opcodes += 1;
         let operation = self.from(pc_data);
         use Opcodes::*;
         match operation {
