@@ -7,21 +7,21 @@ impl CPU {
             MemoryMode::ZeroPageX => self.execute_dec_zpgx(memory),
             MemoryMode::Absolute  => self.execute_dec_abs(memory),
             MemoryMode::AbsoluteX => self.execute_dec_absx(memory),
-            _                     => panic!("{:?}", memory.data)
+            _                     => panic!("No {:?} memory mode for DEC", mode)
         }
     }
 
     pub fn execute_dex(&mut self, mode: MemoryMode) {
         match mode {
             MemoryMode::Implicit  => self.execute_dex_imp(),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for DEX", mode)
         }
     }
 
     pub fn execute_dey(&mut self, mode: MemoryMode) {
         match mode {
             MemoryMode::Implicit  => self.execute_dey_imp(),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for DEY", mode)
         }
     }
 }

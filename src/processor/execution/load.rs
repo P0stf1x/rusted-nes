@@ -12,7 +12,7 @@ impl CPU {
             MemoryMode::AbsoluteY => self.execute_lda_absy(memory),
             MemoryMode::IndirectX => self.execute_lda_indirect_x(memory),
             MemoryMode::IndirectY => self.execute_lda_indirect_y(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for LDA", mode)
         }
     }
 
@@ -23,7 +23,7 @@ impl CPU {
             MemoryMode::ZeroPageY => self.execute_ldx_zpgy(memory),
             MemoryMode::Absolute  => self.execute_ldx_abs(memory),
             MemoryMode::AbsoluteY => self.execute_ldx_absy(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for LDX", mode)
         }
     }
 
@@ -34,7 +34,7 @@ impl CPU {
             MemoryMode::ZeroPageX => self.execute_ldy_zpgx(memory),
             MemoryMode::Absolute  => self.execute_ldy_abs(memory),
             MemoryMode::AbsoluteX => self.execute_ldy_absx(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for LDY", mode)
         }
     }
 }

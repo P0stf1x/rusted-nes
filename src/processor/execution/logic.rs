@@ -12,7 +12,7 @@ impl CPU {
             MemoryMode::AbsoluteY => self.execute_and_absy(memory),
             MemoryMode::IndirectX => self.execute_and_indirect_x(memory),
             MemoryMode::IndirectY => self.execute_and_indirect_y(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for AND", mode)
         }
     }
 
@@ -26,7 +26,7 @@ impl CPU {
             MemoryMode::AbsoluteY => self.execute_eor_absy(memory),
             MemoryMode::IndirectX => self.execute_eor_indirect_x(memory),
             MemoryMode::IndirectY => self.execute_eor_indirect_y(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for EOR", mode)
         }
     }
 
@@ -40,7 +40,7 @@ impl CPU {
             MemoryMode::AbsoluteY => self.execute_ora_absy(memory),
             MemoryMode::IndirectX => self.execute_ora_indirect_x(memory),
             MemoryMode::IndirectY => self.execute_ora_indirect_y(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for ORA", mode)
         }
     }
 
@@ -48,7 +48,7 @@ impl CPU {
         match mode {
             MemoryMode::ZeroPage  => self.execute_bit_zpg(memory),
             MemoryMode::Absolute  => self.execute_bit_abs(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for BIT", mode)
         }
     }
 }

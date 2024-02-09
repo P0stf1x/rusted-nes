@@ -7,21 +7,21 @@ impl CPU {
             MemoryMode::ZeroPageX => self.execute_inc_zpgx(memory),
             MemoryMode::Absolute  => self.execute_inc_abs(memory),
             MemoryMode::AbsoluteX => self.execute_inc_absx(memory),
-            _                     => panic!("{:?}", memory.data)
+            _                     => panic!("No {:?} memory mode for INC", mode)
         }
     }
 
     pub fn execute_inx(&mut self, mode: MemoryMode) {
         match mode {
             MemoryMode::Implicit  => self.execute_inx_imp(),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for INX", mode)
         }
     }
 
     pub fn execute_iny(&mut self, mode: MemoryMode) {
         match mode {
             MemoryMode::Implicit  => self.execute_iny_imp(),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for INY", mode)
         }
     }
 }

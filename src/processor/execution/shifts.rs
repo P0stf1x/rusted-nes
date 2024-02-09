@@ -9,7 +9,7 @@ impl CPU {
             MemoryMode::ZeroPageX => self.execute_asl_zpgx(memory),
             MemoryMode::Absolute  => self.execute_asl_abs(memory),
             MemoryMode::AbsoluteX => self.execute_asl_absx(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for ASL", mode)
         }
     }
 
@@ -20,7 +20,7 @@ impl CPU {
             MemoryMode::ZeroPageX => self.execute_lsr_zpgx(memory),
             MemoryMode::Absolute  => self.execute_lsr_abs(memory),
             MemoryMode::AbsoluteX => self.execute_lsr_absx(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for LSR", mode)
         }
     }
 
@@ -31,7 +31,7 @@ impl CPU {
             MemoryMode::ZeroPageX => self.execute_rol_zpgx(memory),
             MemoryMode::Absolute  => self.execute_rol_abs(memory),
             MemoryMode::AbsoluteX => self.execute_rol_absx(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for ROL", mode)
         }
     }
 
@@ -42,7 +42,7 @@ impl CPU {
             MemoryMode::ZeroPageX => self.execute_ror_zpgx(memory),
             MemoryMode::Absolute  => self.execute_ror_abs(memory),
             MemoryMode::AbsoluteX => self.execute_ror_absx(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for ROR", mode)
         }
     }
 }

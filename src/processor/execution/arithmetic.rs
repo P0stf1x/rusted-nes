@@ -12,7 +12,7 @@ impl CPU {
             MemoryMode::AbsoluteY => self.execute_adc_absy(memory),
             MemoryMode::IndirectX => self.execute_adc_indirect_x(memory),
             MemoryMode::IndirectY => self.execute_adc_indirect_y(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for ADC", mode)
         }
     }
 
@@ -26,7 +26,7 @@ impl CPU {
             MemoryMode::AbsoluteY => self.execute_sbc_absy(memory),
             MemoryMode::IndirectX => self.execute_sbc_indirect_x(memory),
             MemoryMode::IndirectY => self.execute_sbc_indirect_y(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for SBC", mode)
         }
     }
 
@@ -40,7 +40,7 @@ impl CPU {
             MemoryMode::AbsoluteY => self.execute_cmp_absy(memory),
             MemoryMode::IndirectX => self.execute_cmp_indirect_x(memory),
             MemoryMode::IndirectY => self.execute_cmp_indirect_y(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for CMP", mode)
         }
     }
 
@@ -49,7 +49,7 @@ impl CPU {
             MemoryMode::Immediate => self.execute_cpx_imm(memory),
             MemoryMode::ZeroPage  => self.execute_cpx_zpg(memory),
             MemoryMode::Absolute  => self.execute_cpx_abs(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for CPX", mode)
         }
     }
 
@@ -58,7 +58,7 @@ impl CPU {
             MemoryMode::Immediate => self.execute_cpy_imm(memory),
             MemoryMode::ZeroPage  => self.execute_cpy_zpg(memory),
             MemoryMode::Absolute  => self.execute_cpy_abs(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for CPY", mode)
         }
     }
 }

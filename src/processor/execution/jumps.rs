@@ -6,21 +6,21 @@ impl CPU {
         match mode {
             MemoryMode::Absolute  => self.execute_jmp_abs(memory),
             MemoryMode::Indirect  => self.execute_jmp_indirect(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for JMP", mode)
         }
     }
 
     pub fn execute_jsr(&mut self, mode: MemoryMode, memory: &mut MEM) {
         match mode {
             MemoryMode::Absolute  => self.execute_jsr_abs(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for JSR", mode)
         }
     }
 
     pub fn execute_rts(&mut self, mode: MemoryMode, memory: &mut MEM) {
         match mode {
             MemoryMode::Implicit  => self.execute_rts_imp(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for RTS", mode)
         }
     }
 }

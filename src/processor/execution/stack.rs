@@ -5,28 +5,28 @@ impl CPU {
     pub fn execute_pha(&mut self, mode: MemoryMode, memory: &mut MEM) {
         match mode {
             MemoryMode::Implicit  => self.execute_pha_imp(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for PHA", mode)
         }
     }
 
     pub fn execute_php(&mut self, mode: MemoryMode, memory: &mut MEM) {
         match mode {
             MemoryMode::Implicit  => self.execute_php_imp(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for PHP", mode)
         }
     }
 
     pub fn execute_pla(&mut self, mode: MemoryMode, memory: &mut MEM) {
         match mode {
             MemoryMode::Implicit  => self.execute_pla_imp(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for PLA", mode)
         }
     }
 
     pub fn execute_plp(&mut self, mode: MemoryMode, memory: &mut MEM) {
         match mode {
             MemoryMode::Implicit  => self.execute_plp_imp(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for PLP", mode)
         }
     }
 }

@@ -13,7 +13,7 @@ impl CPU {
             MemoryMode::AbsoluteY => self.execute_sta_absy(memory),
             MemoryMode::IndirectX => self.execute_sta_indirect_x(memory),
             MemoryMode::IndirectY => self.execute_sta_indirect_y(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for STA", mode)
         }
     }
 
@@ -22,7 +22,7 @@ impl CPU {
             MemoryMode::ZeroPage  => self.execute_stx_zpg(memory),
             MemoryMode::ZeroPageX => self.execute_stx_zpgx(memory), // FIXME: SHOULD BE ZPGY
             MemoryMode::Absolute  => self.execute_stx_abs(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for STX", mode)
         }
     }
 
@@ -31,7 +31,7 @@ impl CPU {
             MemoryMode::ZeroPage  => self.execute_sty_zpg(memory),
             MemoryMode::ZeroPageX => self.execute_sty_zpgx(memory),
             MemoryMode::Absolute  => self.execute_sty_abs(memory),
-            _                     => panic!()
+            _                     => panic!("No {:?} memory mode for STY", mode)
         }
     }
 }
