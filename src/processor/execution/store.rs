@@ -20,7 +20,7 @@ impl CPU {
     pub fn execute_stx(&mut self, mode: MemoryMode, memory: &mut MEM) {
         match mode {
             MemoryMode::ZeroPage  => self.execute_stx_zpg(memory),
-            MemoryMode::ZeroPageX => self.execute_stx_zpgx(memory), // FIXME: SHOULD BE ZPGY
+            MemoryMode::ZeroPageY => self.execute_stx_zpgy(memory),
             MemoryMode::Absolute  => self.execute_stx_abs(memory),
             _                     => panic!("No {:?} memory mode for STX", mode)
         }
@@ -95,9 +95,9 @@ impl CPU {
         self.PC += 2;
     }
 
-    fn execute_stx_zpgx(&mut self, memory: &mut MEM) {
+    fn execute_stx_zpgy(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 1) as u8);
-        memory_address += self.X;
+        memory_address += self.Y;
         memory.data[memory_address.0 as usize] = self.X.0;
         self.PC += 2;
     }
