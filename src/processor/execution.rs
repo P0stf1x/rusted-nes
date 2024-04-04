@@ -14,6 +14,12 @@ mod jumps;
 mod branches;
 
 impl CPU {
+    pub fn sleep(&mut self, ticks: u32) {
+        // FIXME: right now it sleeps n ticks + time it took to execute instruction
+        let sleep_timer = Duration::from_nanos((self.settings.clock_delta / self.settings.emulation_speed * ticks as f64) as u64);
+        thread::sleep(sleep_timer);
+    }
+
     pub fn fetch_mem_address(&mut self, address: u16, memory: &mut MEM) -> u16 {
         let least_significant_byte = memory.data[address as usize];
         let most_significant_byte = memory.data[address as usize + 1];
