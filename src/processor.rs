@@ -2,7 +2,10 @@ use std::num::Wrapping;
 
 use crate::MEM;
 
+use self::settings::Settings;
+
 pub mod execution;
+pub mod settings;
 
 #[allow(non_snake_case)]
 #[allow(clippy::upper_case_acronyms)]
@@ -23,6 +26,7 @@ pub struct CPU {
     Z: bool,
     C: bool,
 
+    settings: Settings,
     executed_opcodes: u32,
 }
 
