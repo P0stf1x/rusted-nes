@@ -1,5 +1,7 @@
 use crate::processor::*;
 use crate::memory::MEM;
+use std::time::Duration;
+use std::thread;
 
 mod load;
 mod store;
