@@ -7,3 +7,16 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+imgui = "0.11.0"
+glow = "0.12.0"
+imgui-glow-renderer = "0.11.0"
+imgui-sdl2-support = "0.11.0"
+sdl2 = "0.34.5"
+
+[dev-dependencies]
+glow = "0.12.0"
+imgui-glow-renderer = "0.11.0"
+sdl2 = { version = "0.34.5", features = ["bundled", "static-link"] }
+
+[build]
+rustc-link-lib = ["./include/SDL2.lib"]
