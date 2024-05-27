@@ -3,8 +3,8 @@ use std::num::Wrapping;
 use crate::memory::*;
 
 use glow::HasContext;
-use imgui::Context;
-use imgui_glow_renderer::AutoRenderer;
+use imgui::{Condition, Context, Image};
+use imgui_glow_renderer::Renderer;
 use imgui_sdl2_support::SdlPlatform;
 use sdl2::{
     event::Event,
