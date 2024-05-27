@@ -63,7 +63,7 @@ impl PPU {
         window.subsystem().gl_set_swap_interval(1).unwrap();
     
         /* create new glow and imgui contexts */
-        let gl = glow_context(&window);
+        let mut gl = glow_context(&window);
     
         /* create context */
         let mut imgui = Context::create();
@@ -77,12 +77,42 @@ impl PPU {
             .fonts()
             .add_font(&[imgui::FontSource::DefaultFontData { config: None }]);
     
-        /* create platform and renderer */
+        /* create textures, platform and renderer */
+        let mut textures = imgui::Textures::<glow::Texture>::default();
         let mut platform = SdlPlatform::init(&mut imgui);
-        let mut renderer = AutoRenderer::initialize(gl, &mut imgui).unwrap();
+        let mut renderer = Renderer::initialize(&mut gl, &mut imgui, &mut textures, true).unwrap();
     
         /* start main loop */
         let mut event_pump = sdl.event_pump().unwrap();
+    
+        // drawing sample data
+        let mut image_data = Vec::with_capacity(256 * 256);
+        for y in 0..256 {
+            for x in 0..256 {
+                // Insert RGB values
+                image_data.push(x as u8);
+                image_data.push(y as u8);
+                image_data.push((x + y) as u8);
+            }
+        }
+    
+        // creating image
+        let gl_image;
+        unsafe {
+            gl_image = gl.create_texture().ok();
+            gl.bind_texture(glow::TEXTURE_2D, gl_image);
+            gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::NEAREST as i32);
+            gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::NEAREST as i32);
+            gl.tex_image_2d(glow::TEXTURE_2D, 0, glow::RGB as i32, 256 as i32, 256 as i32, 0, glow::RGB, glow::UNSIGNED_BYTE, Some(&image_data));
+        }
+        let sample_texture = textures.insert(gl_image.unwrap());
+    
+        // reading memory
+        let mut memory_bytes: String;
+        unsafe {
+            memory_bytes = String::from_utf8_unchecked(self.memory.data.escape_ascii().collect());
+        }
+        let mem_byts = &memory_bytes[0x8000*4..0x8005*4];
     
         'main: loop {
             for event in event_pump.poll_iter() {
@@ -101,11 +131,23 @@ impl PPU {
             /* create imgui UI here */
             ui.show_demo_window(&mut true);
     
+            ui.window("rendering test")
+                .size([300.0, 400.0], Condition::FirstUseEver)
+                .build(|| {
+                    // ui.input_text_multiline("memory", mem_byts, [32.0, 32.0]);
+                    ui.text_wrapped(&mem_byts);
+                    Image::new(sample_texture, [256.0, 256.0]).build(&ui);
+                    // textures_ui.show(ui);
+                    // ui.text_wrapped(&readme);
+                    // ui.clipboard_text();
+                    ui.text_wrapped("end");
+                });
+    
             /* render */
             let draw_data = imgui.render();
     
-            unsafe { renderer.gl_context().clear(glow::COLOR_BUFFER_BIT) };
-            renderer.render(draw_data).unwrap();
+            unsafe { gl.clear(glow::COLOR_BUFFER_BIT) };
+            renderer.render(&mut gl, &textures, draw_data).unwrap();
     
             window.gl_swap_window();
         }
