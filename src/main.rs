@@ -2,9 +2,11 @@ use std::num::Wrapping;
 
 use crate::processor::*;
 use crate::memory::*;
+use crate::pixel_proccessing::*;
 
 mod processor;
 mod memory;
+mod pixel_proccessing;
 
 use glow::HasContext;
 use imgui::Context;
