@@ -29,6 +29,96 @@ impl MemoryRegion {
     }
 }
 
+#[cfg(test)]
+mod memory_region_test {
+    use super::*;
+
+    fn test_intersection(addr1: usize, addr2: usize, size1: usize, size2: usize, expected_result: bool) {
+        let a: MemoryRegion = MemoryRegion { region_address: addr1, region_size: size1 };
+        let b: MemoryRegion = MemoryRegion { region_address: addr2, region_size: size2 };
+        
+        assert_eq!(a.intersects_region(&b), expected_result);
+    }
+
+    #[test]
+    fn not_intersects_on_left() {
+        test_intersection(0x0000, 0x0004, 2, 4, false);
+    }
+
+    #[test]
+    fn not_intersects_on_left_touches() {
+        test_intersection(0x0000, 0x0004, 4, 4, false);
+    }
+
+    #[test]
+    fn intersects_on_left() {
+        test_intersection(0x0002, 0x0004, 4, 4, true);
+    }
+
+    #[test]
+    fn intersects_same() {
+        test_intersection(0x0004, 0x0004, 4, 4, true);
+    }
+
+    #[test]
+    fn intersects_smaller() {
+        test_intersection(0x0005, 0x0004, 2, 4, true);
+    }
+
+    #[test]
+    fn intersects_bigger() {
+        test_intersection(0x0003, 0x0004, 6, 4, true);
+    }
+
+    #[test]
+    fn intersects_on_right() {
+        test_intersection(0x0006, 0x0004, 4, 4, true);
+    }
+
+    #[test]
+    fn not_intersects_on_right_touches() {
+        test_intersection(0x0008, 0x0004, 4, 4, false);
+    }
+
+    #[test]
+    fn not_intersects_on_right() {
+        test_intersection(0x000A, 0x0004, 2, 4, false);
+    }
+
+    #[test]
+    fn not_inside_on_left() {
+        let a: MemoryRegion = MemoryRegion { region_address: 0x0004, region_size: 4 };
+        assert_eq!(a.inside_region(0x0002), false);
+    }
+
+    #[test]
+    fn not_inside_on_left_touches() {
+        let a: MemoryRegion = MemoryRegion { region_address: 0x0004, region_size: 4 };
+        assert_eq!(a.inside_region(0x0003), false);
+    }
+
+    #[test]
+    fn inside() {
+        let a: MemoryRegion = MemoryRegion { region_address: 0x0004, region_size: 4 };
+        assert_eq!(a.inside_region(0x0004), true);
+        assert_eq!(a.inside_region(0x0005), true);
+        assert_eq!(a.inside_region(0x0006), true);
+        assert_eq!(a.inside_region(0x0007), true);
+    }
+
+    #[test]
+    fn not_inside_on_right_touches() {
+        let a: MemoryRegion = MemoryRegion { region_address: 0x0004, region_size: 4 };
+        assert_eq!(a.inside_region(0x0008), false);
+    }
+
+    #[test]
+    fn not_inside_on_right() {
+        let a: MemoryRegion = MemoryRegion { region_address: 0x0004, region_size: 4 };
+        assert_eq!(a.inside_region(0x0009), false);
+    }
+}
+
 pub struct MemoryMirror {
     physical_memory: MemoryRegion,
     mirrored_memory: MemoryRegion,
@@ -60,6 +150,61 @@ impl MEM {
         for (i, byte) in data.iter().enumerate() {
             self.write(address + i, *byte);
         }
+    }
+}
+
+#[cfg(test)]
+mod read_write_test {
+    use super::*;
+
+    #[test]
+    fn read_zero() {
+        let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
+
+        assert_eq!(test_memory.data[0x0000], 0x00, "Couldn't prepare memory for test");
+        assert_eq!(test_memory.read(0x0000, 1), 0x00);
+    }
+
+    #[test]
+    fn read() {
+        let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
+
+        test_memory.data[0x0000] = 0xff;
+        assert_eq!(test_memory.data[0x0000], 0xff, "Couldn't prepare memory for test");
+        assert_eq!(test_memory.read(0x0000, 1), 0xff);
+    }
+
+    #[test]
+    fn read_bulk() {
+        let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
+
+        test_memory.data[0x0000] = 0xff;
+        test_memory.data[0x0001] = 0xff;
+        assert_eq!(test_memory.data[0x0000], 0xff, "Couldn't prepare memory for test");
+        assert_eq!(test_memory.data[0x0001], 0xff, "Couldn't prepare memory for test");
+        assert_eq!(test_memory.read(0x0000, 2), 0xffff);
+    }
+
+    #[test]
+    fn write() {
+        let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
+
+        assert_eq!(test_memory.read(0x0000, 1), 0x00, "Couldn't prepare memory for test");
+        
+        test_memory.write(0x0000, 0xff);
+        
+        assert_eq!(test_memory.read(0x0000, 1), 0xff);
+    }
+
+    #[test]
+    fn write_bulk() {
+        let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
+
+        assert_eq!(test_memory.read(0x0000, 2), 0x0000, "Couldn't prepare memory for test");
+        
+        test_memory.write_bulk(0x0000, vec![0xff, 0xff]);
+        
+        assert_eq!(test_memory.read(0x0000, 2), 0xffff);
     }
 }
 
@@ -160,17 +305,10 @@ mod mirroring_tests {
     fn test_memory_mirroring() {
         let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
 
-        assert_eq!(test_memory.data[0x0000], 0x00);
-        assert_eq!(test_memory.read(0x0000, 1), 0x00);
-        assert_eq!(test_memory.data[0x0001], 0x00);
-        assert_eq!(test_memory.read(0x0001, 1), 0x00);
-
         test_memory.write(0x0001, 0xCD);
 
-        assert_eq!(test_memory.data[0x0000], 0x00);
-        assert_eq!(test_memory.read(0x0000, 1), 0x00);
-        assert_eq!(test_memory.data[0x0001], 0xCD);
-        assert_eq!(test_memory.read(0x0001, 1), 0xCD);
+        assert_eq!(test_memory.read(0x0000, 1), 0x00, "Couldn't prepare memory for test");
+        assert_eq!(test_memory.read(0x0001, 1), 0xCD, "Couldn't prepare memory for test");
 
         test_memory.push_mirrored_range(MemoryMirror{
             physical_memory: MemoryRegion{
@@ -189,5 +327,43 @@ mod mirroring_tests {
         assert_eq!(test_memory.read(0x0000, 1), 0xAB);
         assert_eq!(test_memory.data[0x0001], 0xCD);
         assert_eq!(test_memory.read(0x0001, 1), 0xAB);
+    }
+
+    #[test]
+    fn test_memory_mirroring_check() {
+        let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
+
+        test_memory.push_mirrored_range(MemoryMirror{
+            physical_memory: MemoryRegion{
+                region_address: 0x0000,
+                region_size: 1,
+            },
+            mirrored_memory: MemoryRegion{
+                region_address: 0x0001,
+                region_size: 1,
+            },
+        }).unwrap();
+
+        assert_eq!(test_memory.is_mirrored(0x0000).is_some(), false);
+        assert_eq!(test_memory.is_mirrored(0x0001).is_some(), true);
+    }
+
+    #[test]
+    fn get_mirrored_address() {
+        let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
+
+        test_memory.push_mirrored_range(MemoryMirror{
+            physical_memory: MemoryRegion{
+                region_address: 0x0000,
+                region_size: 1,
+            },
+            mirrored_memory: MemoryRegion{
+                region_address: 0x0001,
+                region_size: 1,
+            },
+        }).unwrap();
+
+        assert_eq!(test_memory.get_mirrored_address(0x0000), 0x0000);
+        assert_eq!(test_memory.get_mirrored_address(0x0001), 0x0000);
     }
 }
