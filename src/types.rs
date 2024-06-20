@@ -33,6 +33,12 @@ impl PartialEq for Wrapped {
     }
 }
 
+impl PartialEq<isize> for Wrapped {
+    fn eq(&self, &other: &isize) -> bool {
+        return self.value == other;
+    }
+}
+
 impl std::ops::Add for Wrapped {
     type Output = Self;
 
@@ -60,11 +66,25 @@ mod wrapped_tests {
     use super::*;
 
     #[test]
+    fn compare_with_self() {
+        assert_eq!(Wrapped::byte(0x01), Wrapped::byte(0x01));
+        assert_eq!(Wrapped::byte(0x01), Wrapped::word(0x01));
+        assert_eq!(Wrapped::word(0x01), Wrapped::byte(0x01));
+        assert_eq!(Wrapped::word(0x01), Wrapped::word(0x01));
+    }
+
+    #[test]
+    fn compare_with_isize() {
+        assert_eq!(Wrapped::byte(0x01), 0x01);
+        assert_eq!(Wrapped::word(0x01), 0x01);
+    }
+
+    #[test]
     fn addition() {
         let a = Wrapped::byte(0x01);
         let b = Wrapped::byte(0x01);
 
-        assert_eq!(a + b, Wrapped::byte(0x02));
+        assert_eq!(a + b, 0x02);
     }
 
     #[test]
@@ -72,7 +92,7 @@ mod wrapped_tests {
         let a = Wrapped::byte(0xff);
         let b = Wrapped::byte(0x01);
 
-        assert_eq!(a + b, Wrapped::byte(0x00));
+        assert_eq!(a + b, 0x00);
     }
 
     #[test]
@@ -80,7 +100,7 @@ mod wrapped_tests {
         let a = Wrapped::byte(0x01);
         let b = Wrapped::byte(0x01);
 
-        assert_eq!(a - b, Wrapped::byte(0x00));
+        assert_eq!(a - b, 0x00);
     }
 
     #[test]
@@ -88,6 +108,6 @@ mod wrapped_tests {
         let a = Wrapped::byte(0x00);
         let b = Wrapped::byte(0x01);
 
-        assert_eq!(a - b, Wrapped::byte(0xff));
+        assert_eq!(a - b, 0xff);
     }
 }
