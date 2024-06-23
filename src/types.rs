@@ -1,3 +1,5 @@
+use std::num::Wrapping;
+
 #[derive(Debug, Copy, Clone)]
 pub struct Wrapped {
     value: isize,
@@ -39,6 +41,18 @@ impl PartialEq<isize> for Wrapped {
     }
 }
 
+impl From<Wrapping<u8>> for Wrapped {
+    fn from(value: Wrapping<u8>) -> Self {
+        return Wrapped::byte(value.0 as isize);
+    }
+}
+
+impl From<Wrapping<u16>> for Wrapped {
+    fn from(value: Wrapping<u16>) -> Self {
+        return Wrapped::word(value.0 as isize);
+    }
+}
+
 impl std::ops::Add for Wrapped {
     type Output = Self;
 
@@ -64,6 +78,29 @@ impl std::ops::Sub for Wrapped {
 #[cfg(test)]
 mod wrapped_tests {
     use super::*;
+
+    use proptest::prelude::*;
+    proptest! {
+        #[test]
+        fn from_wrapping_u8(val in 0u8..=255) {
+            prop_assert_eq!(Wrapped::from(Wrapping(val)).value as u8, val);
+        }
+
+        #[test]
+        fn from_wrapping_u16(val in 0u16..=65535) {
+            prop_assert_eq!(Wrapped::from(Wrapping(val)).value as u16, val);
+        }
+
+        #[test]
+        fn to_wrapping_u8(val in 0u8..=255) {
+            prop_assert_eq!(Into::<Wrapped>::into(Wrapping(val)), Wrapped::byte(val as isize));
+        }
+
+        #[test]
+        fn to_wrapping_u16(val in 0u16..=65535) {
+            prop_assert_eq!(Into::<Wrapped>::into(Wrapping(val)), Wrapped::word(val as isize));
+        }
+    }
 
     #[test]
     fn compare_with_self() {
