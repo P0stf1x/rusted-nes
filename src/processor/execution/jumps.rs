@@ -73,44 +73,48 @@ mod jmp_tests {
     use crate::memory::MEMORY_SIZE;
     use super::*;
 
-    #[test]
-    fn test_jmp_abs() {
-        let mut test_cpu: CPU = Default::default();
-        let mut memory: MEM = MEM::new(MEMORY_SIZE);
-        memory.data[0..3].copy_from_slice(&[0x4C, 0xCD, 0xAB]);
+    use proptest::prelude::*;
+    proptest! {
+        #[test]
+        fn test_jmp_abs(low_byte in 0x00u8..=0xFF, high_byte in 0x00u8..=0xFF) {
+            let mut test_cpu: CPU = Default::default();
+            let mut memory: MEM = MEM::new(MEMORY_SIZE);
+            memory.write_bulk(0x0000, vec![0x4C, low_byte, high_byte]);
 
-        assert_eq!(test_cpu.PC.0, 0x0000);
-        
-        test_cpu.execute_jmp_abs(&mut memory);
+            assert_eq!(test_cpu.PC.0, 0x0000);
+            
+            test_cpu.execute_jmp_abs(&mut memory);
 
-        assert_eq!(test_cpu.PC.0, 0xABCD);
-    }
+            prop_assert_eq!(test_cpu.PC.0, ((high_byte as u16) << 8) + low_byte as u16);
+        }
 
-    #[test]
-    fn test_jmp_indirect() {
-        let mut test_cpu: CPU = Default::default();
-        let mut memory: MEM = MEM::new(MEMORY_SIZE);
-        memory.data[0..5].copy_from_slice(&[0x6C, 0x03, 0x00, 0xCD, 0xAB]);
+        #[test]
+        fn test_jmp_indirect(indirect_low_byte in 0x03u8..=0xFE, indirect_high_byte in 0x00u8..=0xFF, target_low_byte in 0x00u8..=0xFF, target_high_byte in 0x00u8..=0xFF) {
+            let mut test_cpu: CPU = Default::default();
+            let mut memory: MEM = MEM::new(MEMORY_SIZE);
+            memory.write_bulk(0x0000, vec![0x6C, indirect_low_byte, indirect_high_byte]);
+            memory.write_bulk(((indirect_high_byte as usize) << 8) + indirect_low_byte as usize, vec![target_low_byte, target_high_byte]);
 
-        assert_eq!(test_cpu.PC.0, 0x0000);
-        
-        test_cpu.execute_jmp_indirect(&mut memory);
+            assert_eq!(test_cpu.PC.0, 0x0000);
 
-        assert_eq!(test_cpu.PC.0, 0xABCD);
-    }
+            test_cpu.execute_jmp_indirect(&mut memory);
 
-    #[test]
-    fn test_jmp_indirect_page_bound() {
-        let mut test_cpu: CPU = Default::default();
-        let mut memory: MEM = MEM::new(MEMORY_SIZE);
-        memory.data[0..3].copy_from_slice(&[0x6C, 0xFF, 0x01]);
-        memory.data[0x100..0x101].copy_from_slice(&[0xEF]);
-        memory.data[0x1FF..0x201].copy_from_slice(&[0xCD, 0xAB]);
+            prop_assert_eq!(test_cpu.PC.0, ((target_high_byte as u16) << 8) + target_low_byte as u16);
+        }
 
-        assert_eq!(test_cpu.PC.0, 0x0000);
-        
-        test_cpu.execute_jmp_indirect(&mut memory);
+        #[test]
+        fn test_jmp_indirect_page_bound(indirect_low_byte in 0xFFu8..=0xFF, indirect_high_byte in 0x01u8..=0xFF, target_low_byte in 0x00u8..=0xFF, target_high_byte in 0x00u8..=0xFF) {
+            let mut test_cpu: CPU = Default::default();
+            let mut memory: MEM = MEM::new(MEMORY_SIZE);
+            memory.write_bulk(0x0000, vec![0x6C, indirect_low_byte, indirect_high_byte]);
+            memory.write((indirect_high_byte as usize) << 8, target_high_byte);
+            memory.write(((indirect_high_byte as usize) << 8) + indirect_low_byte as usize, target_low_byte);
 
-        assert_eq!(test_cpu.PC.0, 0xEFCD);
+            assert_eq!(test_cpu.PC.0, 0x0000);
+            
+            test_cpu.execute_jmp_indirect(&mut memory);
+
+            prop_assert_eq!(test_cpu.PC.0, (((target_high_byte as u16) << 8) + target_low_byte as u16));
+        }
     }
 }
