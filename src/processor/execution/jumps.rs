@@ -77,7 +77,7 @@ mod jmp_tests {
     proptest! {
         #[test]
         fn test_jmp_abs(low_byte in 0x00u8..=0xFF, high_byte in 0x00u8..=0xFF) {
-            let mut test_cpu: CPU = Default::default();
+            let mut test_cpu: CPU = CPU::new();
             let mut memory: MEM = MEM::new(MEMORY_SIZE);
             memory.write_bulk(0x0000, vec![0x4C, low_byte, high_byte]);
 
@@ -90,7 +90,7 @@ mod jmp_tests {
 
         #[test]
         fn test_jmp_indirect(indirect_low_byte in 0x03u8..=0xFE, indirect_high_byte in 0x00u8..=0xFF, target_low_byte in 0x00u8..=0xFF, target_high_byte in 0x00u8..=0xFF) {
-            let mut test_cpu: CPU = Default::default();
+            let mut test_cpu: CPU = CPU::new();
             let mut memory: MEM = MEM::new(MEMORY_SIZE);
             memory.write_bulk(0x0000, vec![0x6C, indirect_low_byte, indirect_high_byte]);
             memory.write_bulk(((indirect_high_byte as usize) << 8) + indirect_low_byte as usize, vec![target_low_byte, target_high_byte]);
@@ -104,7 +104,7 @@ mod jmp_tests {
 
         #[test]
         fn test_jmp_indirect_page_bound(indirect_low_byte in 0xFFu8..=0xFF, indirect_high_byte in 0x01u8..=0xFF, target_low_byte in 0x00u8..=0xFF, target_high_byte in 0x00u8..=0xFF) {
-            let mut test_cpu: CPU = Default::default();
+            let mut test_cpu: CPU = CPU::new();
             let mut memory: MEM = MEM::new(MEMORY_SIZE);
             memory.write_bulk(0x0000, vec![0x6C, indirect_low_byte, indirect_high_byte]);
             memory.write((indirect_high_byte as usize) << 8, target_high_byte);

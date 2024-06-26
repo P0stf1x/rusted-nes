@@ -97,7 +97,7 @@ mod inx_tests {
 
     #[test]
     fn test_inx() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
 
         assert_eq!(test_cpu.X.0, 0x00);
         assert_eq!(test_cpu.Z, false);
@@ -123,7 +123,7 @@ mod inx_tests {
     
     #[test]
     fn test_inx_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
         test_cpu.X = Wrapping(0x7Fu8);
         assert_eq!(test_cpu.X.0, 0x7F);
@@ -138,7 +138,7 @@ mod inx_tests {
     
     #[test]
     fn test_inx_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
         test_cpu.X = Wrapping(0xFFu8);
         assert_eq!(test_cpu.X.0, 0xFF);
@@ -160,7 +160,7 @@ mod iny_tests {
     fn test_iny() {
         // TODO: IMPLEMENT PC TEST
 
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
 
         assert_eq!(test_cpu.Y.0, 0x00);
         assert_eq!(test_cpu.Z, false);
@@ -186,7 +186,7 @@ mod iny_tests {
     
     #[test]
     fn test_iny_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
         test_cpu.Y = Wrapping(0x7Fu8);
         assert_eq!(test_cpu.Y.0, 0x7F);
@@ -201,7 +201,7 @@ mod iny_tests {
     
     #[test]
     fn test_iny_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
         test_cpu.Y = Wrapping(0xFFu8);
         assert_eq!(test_cpu.Y.0, 0xFF);

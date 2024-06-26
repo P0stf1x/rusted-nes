@@ -97,7 +97,7 @@ mod dex_tests {
 
     #[test]
     fn test_dex() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
 
         test_cpu.X = Wrapping(0x02);
         assert_eq!(test_cpu.X.0, 0x02);
@@ -124,7 +124,7 @@ mod dex_tests {
     
     #[test]
     fn test_dex_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
         test_cpu.Y = Wrapping(0x00u8);
         assert_eq!(test_cpu.X.0, 0x00);
@@ -139,7 +139,7 @@ mod dex_tests {
     
     #[test]
     fn test_dex_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
         test_cpu.X = Wrapping(0x01u8);
         assert_eq!(test_cpu.X.0, 0x01);
@@ -159,7 +159,7 @@ mod dey_tests {
 
     #[test]
     fn test_dey() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
 
         test_cpu.Y = Wrapping(0x02);
         assert_eq!(test_cpu.Y.0, 0x02);
@@ -186,7 +186,7 @@ mod dey_tests {
     
     #[test]
     fn test_dey_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
         test_cpu.Y = Wrapping(0x00u8);
         assert_eq!(test_cpu.Y.0, 0x00);
@@ -201,7 +201,7 @@ mod dey_tests {
     
     #[test]
     fn test_dey_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
         test_cpu.Y = Wrapping(0x01u8);
         assert_eq!(test_cpu.Y.0, 0x01);

@@ -146,7 +146,7 @@ mod tests {
 
     #[test]
     fn test_fetch_mem_address() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xCD, 0xAB]);
 

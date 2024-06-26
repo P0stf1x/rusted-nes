@@ -14,7 +14,7 @@ fn main() {
     } else {
         memory = MEM::new(MEMORY_SIZE);
     }
-    let mut cpu: CPU = Default::default();
+    let mut cpu: CPU = CPU::new();
 
     // TODO: move to cpu init
     cpu.PC = std::num::Wrapping(PRG_ROM_ENTRY_ADDR as u16);
