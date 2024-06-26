@@ -5,6 +5,7 @@ use crate::memory::*;
 
 mod processor;
 mod memory;
+mod types;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
