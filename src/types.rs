@@ -2,7 +2,7 @@ use std::num::Wrapping;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Wrapped {
-    value: isize,
+    pub value: isize,
     size: isize,
 }
 
