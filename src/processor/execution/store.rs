@@ -40,49 +40,49 @@ impl CPU {
 impl CPU {
     fn execute_sta_zpg(&mut self, memory: &mut MEM) {
         let memory_address = memory.read(self.next_pc(), 1);
-        memory.data[memory_address] = self.A.0;
+        memory.data[memory_address] = self.A.value as u8;
         self.PC += 2;
     }
 
     fn execute_sta_zpgx(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 1) as u8);
-        memory_address += self.X;
-        memory.data[memory_address.0 as usize] = self.A.0;
+        memory_address += self.X.value as u8;
+        memory.data[memory_address.0 as usize] = self.A.value as u8;
         self.PC += 2;
     }
 
     fn execute_sta_abs(&mut self, memory: &mut MEM) {
         let memory_address = memory.read(self.next_pc(), 2);
-        memory.data[memory_address] = self.A.0;
+        memory.data[memory_address] = self.A.value as u8;
         self.PC += 3;
     }
 
     fn execute_sta_absx(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 2) as u8);
-        memory_address += self.X;
-        memory.data[memory_address.0 as usize] = self.A.0;
+        memory_address += self.X.value as u8;
+        memory.data[memory_address.0 as usize] = self.A.value as u8;
         self.PC += 3;
     }
 
     fn execute_sta_absy(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 2) as u8);
-        memory_address += self.Y;
-        memory.data[memory_address.0 as usize] = self.A.0;
+        memory_address += self.Y.value as u8;
+        memory.data[memory_address.0 as usize] = self.A.value as u8;
         self.PC += 3;
     }
 
     fn execute_sta_indirect_x(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 1) as u8);
-        memory_address += self.X;
-        memory.data[memory_address.0 as usize] = self.A.0;
+        memory_address += self.X.value as u8;
+        memory.data[memory_address.0 as usize] = self.A.value as u8;
         self.PC += 2;
     }
 
     fn execute_sta_indirect_y(&mut self, memory: &mut MEM) {
-        let memory_pointer = memory.read((self.PC + Wrapping(1)).0 as usize, 1);
+        let memory_pointer = memory.read((self.PC + 1).value as usize, 1);
         let mut memory_address = Wrapping(memory.read(memory_pointer, 2) as u16);
-        memory_address += self.Y.0 as u16;
-        memory.data[memory_address.0 as usize] = self.A.0;
+        memory_address += self.Y.value as u16;
+        memory.data[memory_address.0 as usize] = self.A.value as u8;
         self.PC += 2;
     }
 }
@@ -91,20 +91,20 @@ impl CPU {
 impl CPU {
     fn execute_stx_zpg(&mut self, memory: &mut MEM) {
         let memory_address = memory.read(self.next_pc(), 1);
-        memory.data[memory_address] = self.X.0;
+        memory.data[memory_address] = self.X.value as u8;
         self.PC += 2;
     }
 
     fn execute_stx_zpgy(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 1) as u8);
-        memory_address += self.Y;
-        memory.data[memory_address.0 as usize] = self.X.0;
+        memory_address += self.Y.value as u8;
+        memory.data[memory_address.0 as usize] = self.X.value as u8;
         self.PC += 2;
     }
 
     fn execute_stx_abs(&mut self, memory: &mut MEM) {
         let memory_address = memory.read(self.next_pc(), 2);
-        memory.data[memory_address] = self.X.0;
+        memory.data[memory_address] = self.X.value as u8;
         self.PC += 3;
     }
 }
@@ -113,20 +113,20 @@ impl CPU {
 impl CPU {
     fn execute_sty_zpg(&mut self, memory: &mut MEM) {
         let memory_address = memory.read(self.next_pc(), 1);
-        memory.data[memory_address] = self.Y.0;
+        memory.data[memory_address] = self.Y.value as u8;
         self.PC += 2;
     }
 
     fn execute_sty_zpgx(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 1) as u8);
-        memory_address += self.X;
-        memory.data[memory_address.0 as usize] = self.Y.0;
+        memory_address += self.X.value as u8;
+        memory.data[memory_address.0 as usize] = self.Y.value as u8;
         self.PC += 2;
     }
 
     fn execute_sty_abs(&mut self, memory: &mut MEM) {
         let memory_address = memory.read(self.next_pc(), 2);
-        memory.data[memory_address] = self.Y.0;
+        memory.data[memory_address] = self.Y.value as u8;
         self.PC += 3;
     }
 }

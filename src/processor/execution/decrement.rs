@@ -40,7 +40,7 @@ impl CPU {
 
     fn execute_dec_zpgx(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 1) as u8);
-        memory_address += self.X;
+        memory_address += self.X.value as u8;
         let mut memory_value = Wrapping(memory.read(memory_address.0 as usize, 1) as u8);
         memory_value -= 1;
         memory.write(memory_address.0 as usize, memory_value.0);
@@ -61,7 +61,7 @@ impl CPU {
 
     fn execute_dec_absx(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 2) as u16);
-        memory_address += self.X.0 as u16;
+        memory_address += self.X.value as u16;
         let mut memory_value = Wrapping(memory.read(memory_address.0 as usize, 1) as u8);
         memory_value -= 1;
         memory.write(memory_address.0 as usize, memory_value.0);
@@ -74,9 +74,9 @@ impl CPU {
 // DEX IMPL
 impl CPU {
     fn execute_dex_imp(&mut self) {
-        self.X = self.X - Wrapping(1);
-        self.Z = self.X.0 == 0;
-        self.N = self.X.0 & 0b_1000_0000 != 0;
+        self.X -= 1;
+        self.Z = self.X == 0;
+        self.N = (self.X.value as u8) & 0b_1000_0000 != 0;
         self.PC += 1;
     }
 }
@@ -84,9 +84,9 @@ impl CPU {
 // DEY IMPL
 impl CPU {
     fn execute_dey_imp(&mut self) {
-        self.Y = self.Y - Wrapping(1);
-        self.Z = self.Y.0 == 0;
-        self.N = self.Y.0 & 0b_1000_0000 != 0;
+        self.Y -= 1;
+        self.Z = self.Y == 0;
+        self.N = (self.Y.value as u8) & 0b_1000_0000 != 0;
         self.PC += 1;
     }
 }
@@ -97,57 +97,57 @@ mod dex_tests {
 
     #[test]
     fn test_dex() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
 
-        test_cpu.X = Wrapping(0x02);
-        assert_eq!(test_cpu.X.0, 0x02);
+        test_cpu.X = Wrapped::byte(0x02);
+        assert_eq!(test_cpu.X, 0x02);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
         
         test_cpu.execute_dex_imp();
-        assert_eq!(test_cpu.X.0, 0x01);
+        assert_eq!(test_cpu.X, 0x01);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
         
-        test_cpu.X = Wrapping(0x43);
+        test_cpu.X = Wrapped::byte(0x43);
         test_cpu.execute_dex_imp();
-        assert_eq!(test_cpu.X.0, 0x42);
+        assert_eq!(test_cpu.X, 0x42);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
         
-        test_cpu.X = Wrapping(0x6a);
+        test_cpu.X = Wrapped::byte(0x6a);
         test_cpu.execute_dex_imp();
-        assert_eq!(test_cpu.X.0, 0x69);
+        assert_eq!(test_cpu.X, 0x69);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
     }
     
     #[test]
     fn test_dex_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
-        test_cpu.Y = Wrapping(0x00u8);
-        assert_eq!(test_cpu.X.0, 0x00);
+        test_cpu.Y = Wrapped::byte(0x00);
+        assert_eq!(test_cpu.X, 0x00);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
 
         test_cpu.execute_dex_imp();
-        assert_eq!(test_cpu.X.0, 0xFF);
+        assert_eq!(test_cpu.X, 0xFF);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, true);
     }
     
     #[test]
     fn test_dex_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
-        test_cpu.X = Wrapping(0x01u8);
-        assert_eq!(test_cpu.X.0, 0x01);
+        test_cpu.X = Wrapped::byte(0x01);
+        assert_eq!(test_cpu.X, 0x01);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
 
         test_cpu.execute_dex_imp();
-        assert_eq!(test_cpu.X.0, 0x00);
+        assert_eq!(test_cpu.X, 0x00);
         assert_eq!(test_cpu.Z, true);
         assert_eq!(test_cpu.N, false);
     }
@@ -159,57 +159,57 @@ mod dey_tests {
 
     #[test]
     fn test_dey() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
 
-        test_cpu.Y = Wrapping(0x02);
-        assert_eq!(test_cpu.Y.0, 0x02);
+        test_cpu.Y = Wrapped::byte(0x02);
+        assert_eq!(test_cpu.Y, 0x02);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
         
         test_cpu.execute_dey_imp();
-        assert_eq!(test_cpu.Y.0, 0x01);
+        assert_eq!(test_cpu.Y, 0x01);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
         
-        test_cpu.Y = Wrapping(0x43);
+        test_cpu.Y = Wrapped::byte(0x43);
         test_cpu.execute_dey_imp();
-        assert_eq!(test_cpu.Y.0, 0x42);
+        assert_eq!(test_cpu.Y, 0x42);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
         
-        test_cpu.Y = Wrapping(0x6a);
+        test_cpu.Y = Wrapped::byte(0x6a);
         test_cpu.execute_dey_imp();
-        assert_eq!(test_cpu.Y.0, 0x69);
+        assert_eq!(test_cpu.Y, 0x69);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
     }
     
     #[test]
     fn test_dey_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
-        test_cpu.Y = Wrapping(0x00u8);
-        assert_eq!(test_cpu.Y.0, 0x00);
+        test_cpu.Y = Wrapped::byte(0x00);
+        assert_eq!(test_cpu.Y, 0x00);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
 
         test_cpu.execute_dey_imp();
-        assert_eq!(test_cpu.Y.0, 0xFF);
+        assert_eq!(test_cpu.Y, 0xFF);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, true);
     }
     
     #[test]
     fn test_dey_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
-        test_cpu.Y = Wrapping(0x01u8);
-        assert_eq!(test_cpu.Y.0, 0x01);
+        test_cpu.Y = Wrapped::byte(0x01);
+        assert_eq!(test_cpu.Y, 0x01);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
 
         test_cpu.execute_dey_imp();
-        assert_eq!(test_cpu.Y.0, 0x00);
+        assert_eq!(test_cpu.Y, 0x00);
         assert_eq!(test_cpu.Z, true);
         assert_eq!(test_cpu.N, false);
     }

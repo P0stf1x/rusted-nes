@@ -29,19 +29,19 @@ impl CPU {
     }
 
     pub fn execute(&mut self, memory: &mut MEM) -> Result<(), ()> {
-        let pc_data = memory.read(self.PC.0 as usize, 1) as u8;
+        let pc_data = memory.read(self.PC.value as usize, 1) as u8;
         self.executed_opcodes += 1;
         let operation = self.from(pc_data);
         use Opcodes::*;
         match operation {
-            Err(_) => panic!("Unexpected instruction {pc_data:#04X} at {:#06X}", self.PC.0),
+            Err(_) => panic!("Unexpected instruction {pc_data:#04X} at {:#06X}", self.PC.value),
             
             Ok(operation) => {
                 let status = self.store_status();
 
                 // TODO: use logger instead of just printing
                 // 
-                println!("{:04X}  {:02X}                                        A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", self.PC.0, pc_data, self.A.0, self.X.0, self.Y.0, status, self.S.0);
+                println!("{:04X}  {:02X}                                        A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", self.PC.value, pc_data, self.A.value, self.X.value, self.Y.value, status, self.S.value);
                 
                 #[allow(unreachable_patterns)] // In case of adding new opcodes to the enum
                 match operation {
@@ -128,7 +128,7 @@ impl CPU {
                         let pcl = self.pull_stack(memory) as u16;
                         let pch = self.pull_stack(memory) as u16;
                         let pc = (pch << 8) + pcl;
-                        self.PC = Wrapping(pc);
+                        self.PC = Wrapped::word(pc as isize);
                     }),
 
                     opcode => {panic!("Unexpected instruction {opcode:?}")},
@@ -146,11 +146,11 @@ mod tests {
 
     #[test]
     fn test_fetch_mem_address() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xCD, 0xAB]);
 
-        assert_eq!(test_cpu.PC.0, 0x0000);
+        assert_eq!(test_cpu.PC.value, 0x0000);
         
         let fetched_address = test_cpu.fetch_mem_address(0x0000, &mut memory);
 

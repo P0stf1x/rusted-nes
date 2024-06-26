@@ -1,32 +1,48 @@
 use std::num::Wrapping;
 
+use derive_new::new;
+
 use crate::MEM;
+use crate::types::Wrapped;
 
 use self::settings::Settings;
 
 pub mod execution;
 pub mod settings;
 
-#[allow(non_snake_case)]
-#[allow(clippy::upper_case_acronyms)]
-#[derive(Default)]
+#[allow(non_snake_case, clippy::upper_case_acronyms)]
 #[derive(Debug)]
+#[derive(new)]
 pub struct CPU {
-    pub PC: Wrapping<u16>,  // Program Count
-    A: Wrapping<u8>,    // Accumulator
-    X: Wrapping<u8>,    // Register X
-    Y: Wrapping<u8>,    // Register Y
-    pub S: Wrapping<u8>,    // Stack Pointer
+    #[new(value = "Wrapped::word(0)")]
+    pub PC: Wrapped,  // Program Count
+    #[new(value = "Wrapped::byte(0)")]
+    A: Wrapped,    // Accumulator
+    #[new(value = "Wrapped::byte(0)")]
+    X: Wrapped,    // Register X
+    #[new(value = "Wrapped::byte(0)")]
+    Y: Wrapped,    // Register Y
+    #[new(value = "Wrapped::byte(0)")]
+    pub S: Wrapped,    // Stack Pointer
     
+    #[new(default)]
     N: bool,
+    #[new(default)]
     V: bool,
+    #[new(default)]
     B: bool,
+    #[new(default)]
     D: bool,
+    #[new(default)]
     pub I: bool,
+    #[new(default)]
     Z: bool,
+    #[new(default)]
     C: bool,
-
+    
+    #[new(default)]
     settings: Settings,
+    #[new(default)]
     executed_opcodes: u32,
 }
 
@@ -292,13 +308,13 @@ impl CPU {
 
 impl CPU {
     pub fn push_stack(&mut self, data: u8, memory: &mut MEM) {
-        memory.data[0x0100 + self.S.0 as usize] = data;
+        memory.data[0x0100 + self.S.value as usize] = data;
         self.S -= 1;
     }
 
     pub fn pull_stack(&mut self, memory: &mut MEM) -> u8 {
         self.S += 1;
-        let memory_address = 0x0100 + self.S.0 as usize;
+        let memory_address = 0x0100 + self.S.value as usize;
         let val = memory.read(memory_address, 1) as u8;
         return val;
     }
@@ -326,24 +342,24 @@ impl CPU {
     }
 
     pub fn next_pc(&mut self) -> usize {
-        (self.PC + Wrapping(1)).0 as usize
+        (self.PC + 1).value as usize
     }
 
     #[allow(dead_code)]
     pub fn nmi(&mut self, memory: &mut MEM) {
         let vector = memory.read(0xFFFA, 2);
-        self.PC = Wrapping(vector as u16);
+        self.PC = Wrapped::word(vector as isize);
     }
     
     #[allow(dead_code)]
     pub fn reset(&mut self, memory: &mut MEM) {
         let vector = memory.read(0xFFFC, 2);
-        self.PC = Wrapping(vector as u16);
+        self.PC = Wrapped::word(vector as isize);
     }
     
     #[allow(dead_code)]
     pub fn irq_brk(&mut self, memory: &mut MEM) {
         let vector = memory.read(0xFFFE, 2);
-        self.PC = Wrapping(vector as u16);
+        self.PC = Wrapped::word(vector as isize);
     }
 }

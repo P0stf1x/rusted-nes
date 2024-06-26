@@ -2,6 +2,7 @@ use std::num::Wrapping;
 
 use crate::processor::*;
 use crate::memory::*;
+use crate::types::Wrapped;
 
 mod processor;
 mod memory;
@@ -15,11 +16,11 @@ fn main() {
     } else {
         memory = MEM::new(MEMORY_SIZE);
     }
-    let mut cpu: CPU = Default::default();
+    let mut cpu: CPU = CPU::new();
 
     // TODO: move to cpu init
-    cpu.PC = std::num::Wrapping(PRG_ROM_ENTRY_ADDR as u16);
-    cpu.S = Wrapping(0xFDu8);
+    cpu.PC = Wrapped::word(PRG_ROM_ENTRY_ADDR as isize);
+    cpu.S = Wrapped::byte(0xFD);
     cpu.I = true;
     memory.data[0x2002] = 0b_1000_0000; // FIXME: hack to make cpu think it's always in vblank
     
@@ -43,7 +44,7 @@ fn main() {
             println!("-----------------------------");
             println!("WE CRASHED");
             println!("{:#04X?}", cpu);
-            println!("{:#04X}", memory.read(cpu.PC.0 as usize, 1));
+            println!("{:#04X}", memory.read(cpu.PC.value as usize, 1));
             println!("-----------------------------");
             panic!();
         };

@@ -42,71 +42,71 @@ impl CPU {
 // LDA IMPL
 impl CPU {
     fn execute_lda_imm(&mut self, memory: &mut MEM) {
-        self.A = Wrapping(memory.read(self.next_pc(), 1) as u8);
-        self.Z = self.A.0 == 0;
-        self.N = self.A.0 & 0b_1000_0000 != 0;
+        self.A = Wrapped::byte(memory.read(self.next_pc(), 1) as isize);
+        self.Z = self.A == 0;
+        self.N = (self.A.value as u8) & 0b_1000_0000 != 0;
         self.PC += 2;
     }
 
     fn execute_lda_zpg(&mut self, memory: &mut MEM) {
         let memory_address = memory.read(self.next_pc(), 1);
-        self.A = Wrapping(memory.read(memory_address, 1) as u8);
-        self.Z = self.A.0 == 0;
-        self.N = self.A.0 & 0b_1000_0000 != 0;
+        self.A = Wrapped::byte(memory.read(memory_address, 1) as isize);
+        self.Z = self.A == 0;
+        self.N = (self.A.value as u8) & 0b_1000_0000 != 0;
         self.PC += 2;
     }
     
     fn execute_lda_zpgx(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 1) as u8);
-        memory_address += self.X;
-        self.A = Wrapping(memory.read(memory_address.0 as usize, 1) as u8);
-        self.Z = self.A.0 == 0;
-        self.N = self.A.0 & 0b_1000_0000 != 0;
+        memory_address += self.X.value as u8;
+        self.A = Wrapped::byte(memory.read(memory_address.0 as usize, 1) as isize);
+        self.Z = self.A == 0;
+        self.N = (self.A.value as u8) & 0b_1000_0000 != 0;
         self.PC += 2;
     }
 
     fn execute_lda_abs(&mut self, memory: &mut MEM) {
         let memory_address = memory.read(self.next_pc(), 2);
-        self.A = Wrapping(memory.read(memory_address, 1) as u8);
-        self.Z = self.A.0 == 0;
-        self.N = self.A.0 & 0b_1000_0000 != 0;
+        self.A = Wrapped::byte(memory.read(memory_address, 1) as isize);
+        self.Z = self.A == 0;
+        self.N = (self.A.value as u8) & 0b_1000_0000 != 0;
         self.PC += 3;
     }
 
     fn execute_lda_absx(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 2) as u16);
-        memory_address += self.X.0 as u16;
-        self.A = Wrapping(memory.read(memory_address.0 as usize, 1) as u8);
-        self.Z = self.A.0 == 0;
-        self.N = self.A.0 & 0b_1000_0000 != 0;
+        memory_address += self.X.value as u16;
+        self.A = Wrapped::byte(memory.read(memory_address.0 as usize, 1) as isize);
+        self.Z = self.A == 0;
+        self.N = (self.A.value as u8) & 0b_1000_0000 != 0;
         self.PC += 3;
     }
 
     fn execute_lda_absy(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 2) as u16);
-        memory_address += self.Y.0 as u16;
-        self.A = Wrapping(memory.read(memory_address.0 as usize, 1) as u8);
-        self.Z = self.A.0 == 0;
-        self.N = self.A.0 & 0b_1000_0000 != 0;
+        memory_address += self.Y.value as u16;
+        self.A = Wrapped::byte(memory.read(memory_address.0 as usize, 1) as isize);
+        self.Z = self.A == 0;
+        self.N = (self.A.value as u8) & 0b_1000_0000 != 0;
         self.PC += 3;
     }
 
     fn execute_lda_indirect_x(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 1) as u8);
-        memory_address += self.X;
-        self.A = Wrapping(memory.read(memory_address.0 as usize, 1) as u8);
-        self.Z = self.A.0 == 0;
-        self.N = self.A.0 & 0b_1000_0000 != 0;
+        memory_address += self.X.value as u8;
+        self.A = Wrapped::byte(memory.read(memory_address.0 as usize, 1) as isize);
+        self.Z = self.A == 0;
+        self.N = (self.A.value as u8) & 0b_1000_0000 != 0;
         self.PC += 2;
     }
 
     fn execute_lda_indirect_y(&mut self, memory: &mut MEM) {
         let memory_pointer = memory.read(self.next_pc(), 1);
         let mut memory_address = Wrapping(memory.read(memory_pointer, 2) as u16);
-        memory_address += self.Y.0 as u16;
-        self.A = Wrapping(memory.read(memory_address.0 as usize, 1) as u8);
-        self.Z = self.A.0 == 0;
-        self.N = self.A.0 & 0b_1000_0000 != 0;
+        memory_address += self.Y.value as u16;
+        self.A = Wrapped::byte(memory.read(memory_address.0 as usize, 1) as isize);
+        self.Z = self.A == 0;
+        self.N = (self.A.value as u8) & 0b_1000_0000 != 0;
         self.PC += 2;
     }
 }
@@ -114,43 +114,43 @@ impl CPU {
 // LDX IMPL
 impl CPU {
     fn execute_ldx_imm(&mut self, memory: &mut MEM) {
-        self.X = Wrapping(memory.read(self.next_pc(), 1) as u8);
-        self.Z = self.X.0 == 0;
-        self.N = self.X.0 & 0b_1000_0000 != 0;
+        self.X = Wrapped::byte(memory.read(self.next_pc(), 1) as isize);
+        self.Z = self.X == 0;
+        self.N = (self.X.value as u8) & 0b_1000_0000 != 0;
         self.PC += 2;
     }
 
     fn execute_ldx_zpg(&mut self, memory: &mut MEM) {
         let memory_address = memory.read(self.next_pc(), 1);
-        self.X = Wrapping(memory.read(memory_address, 1) as u8);
-        self.Z = self.X.0 == 0;
-        self.N = self.X.0 & 0b_1000_0000 != 0;
+        self.X = Wrapped::byte(memory.read(memory_address, 1) as isize);
+        self.Z = self.X == 0;
+        self.N = (self.X.value as u8) & 0b_1000_0000 != 0;
         self.PC += 2;
     }
 
     fn execute_ldx_zpgy(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 1) as u8);
-        memory_address += self.Y;
-        self.X = Wrapping(memory.read(memory_address.0 as usize, 1) as u8);
-        self.Z = self.X.0 == 0;
-        self.N = self.X.0 & 0b_1000_0000 != 0;
+        memory_address += self.Y.value as u8;
+        self.X = Wrapped::byte(memory.read(memory_address.0 as usize, 1) as isize);
+        self.Z = self.X == 0;
+        self.N = (self.X.value as u8) & 0b_1000_0000 != 0;
         self.PC += 2;
     }
 
     fn execute_ldx_abs(&mut self, memory: &mut MEM) {
         let memory_address = memory.read(self.next_pc(), 2);
-        self.X = Wrapping(memory.read(memory_address, 1) as u8);
-        self.Z = self.X.0 == 0;
-        self.N = self.X.0 & 0b_1000_0000 != 0;
+        self.X = Wrapped::byte(memory.read(memory_address, 1) as isize);
+        self.Z = self.X == 0;
+        self.N = (self.X.value as u8) & 0b_1000_0000 != 0;
         self.PC += 3;
     }
 
     fn execute_ldx_absy(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 2) as u16);
-        memory_address += self.Y.0 as u16;
-        self.X = Wrapping(memory.read(memory_address.0 as usize, 1) as u8);
-        self.Z = self.X.0 == 0;
-        self.N = self.X.0 & 0b_1000_0000 != 0;
+        memory_address += self.Y.value as u16;
+        self.X = Wrapped::byte(memory.read(memory_address.0 as usize, 1) as isize);
+        self.Z = self.X == 0;
+        self.N = (self.X.value as u8) & 0b_1000_0000 != 0;
         self.PC += 3;
     }
 }
@@ -158,43 +158,43 @@ impl CPU {
 // LDY IMPL
 impl CPU {
     fn execute_ldy_imm(&mut self, memory: &mut MEM) {
-        self.Y = Wrapping(memory.read(self.next_pc(), 1) as u8);
-        self.Z = self.Y.0 == 0;
-        self.N = self.Y.0 & 0b_1000_0000 != 0;
+        self.Y = Wrapped::byte(memory.read(self.next_pc(), 1) as isize);
+        self.Z = self.Y == 0;
+        self.N = (self.Y.value as u8) & 0b_1000_0000 != 0;
         self.PC += 2;
     }
     
     fn execute_ldy_zpg(&mut self, memory: &mut MEM) {
         let memory_address = memory.read(self.next_pc(), 1);
-        self.Y = Wrapping(memory.data[memory_address]);
-        self.Z = self.Y.0 == 0;
-        self.N = self.Y.0 & 0b_1000_0000 != 0;
+        self.Y = Wrapped::byte(memory.data[memory_address] as isize);
+        self.Z = self.Y == 0;
+        self.N = (self.Y.value as u8) & 0b_1000_0000 != 0;
         self.PC += 2;
     }
 
     fn execute_ldy_zpgx(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 1) as u8);
-        memory_address += self.X;
-        self.Y = Wrapping(memory.read(memory_address.0 as usize, 1) as u8);
-        self.Z = self.Y.0 == 0;
-        self.N = self.Y.0 & 0b_1000_0000 != 0;
+        memory_address += self.X.value as u8;
+        self.Y = Wrapped::byte(memory.read(memory_address.0 as usize, 1) as isize);
+        self.Z = self.Y == 0;
+        self.N = (self.Y.value as u8) & 0b_1000_0000 != 0;
         self.PC += 2;
     }
 
     fn execute_ldy_abs(&mut self, memory: &mut MEM) {
         let memory_address = memory.read(self.next_pc(), 2);
-        self.Y = Wrapping(memory.read(memory_address, 1) as u8);
-        self.Z = self.Y.0 == 0;
-        self.N = self.Y.0 & 0b_1000_0000 != 0;
+        self.Y = Wrapped::byte(memory.read(memory_address, 1) as isize);
+        self.Z = self.Y == 0;
+        self.N = (self.Y.value as u8) & 0b_1000_0000 != 0;
         self.PC += 3;
     }
 
     fn execute_ldy_absx(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 2) as u16);
-        memory_address += self.X.0 as u16;
-        self.Y = Wrapping(memory.read(memory_address.0 as usize, 1) as u8);
-        self.Z = self.Y.0 == 0;
-        self.N = self.Y.0 & 0b_1000_0000 != 0;
+        memory_address += self.X.value as u16;
+        self.Y = Wrapped::byte(memory.read(memory_address.0 as usize, 1) as isize);
+        self.Z = self.Y == 0;
+        self.N = (self.Y.value as u8) & 0b_1000_0000 != 0;
         self.PC += 3;
     }
 }
@@ -206,115 +206,115 @@ mod ldx_tests {
 
     #[test]
     fn test_ldx_immediate() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x42]);
 
-        assert_eq!(test_cpu.X.0, 0x00);
+        assert_eq!(test_cpu.X, 0x00);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0000);
+        assert_eq!(test_cpu.PC, 0x0000);
         
         test_cpu.execute_ldx_imm(&mut memory);
-        assert_eq!(test_cpu.X.0, 0x42);
+        assert_eq!(test_cpu.X, 0x42);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0002);
+        assert_eq!(test_cpu.PC, 0x0002);
     }
     
     #[test]
     fn test_lnx_immediate_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x80]);
         
-        assert_eq!(test_cpu.X.0, 0x00);
+        assert_eq!(test_cpu.X, 0x00);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0000);
+        assert_eq!(test_cpu.PC, 0x0000);
 
         test_cpu.execute_ldx_imm(&mut memory);
-        assert_eq!(test_cpu.X.0, 0x80);
+        assert_eq!(test_cpu.X, 0x80);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, true);
-        assert_eq!(test_cpu.PC.0, 0x0002);
+        assert_eq!(test_cpu.PC, 0x0002);
     }
     
     #[test]
     fn test_lnx_immediate_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x00]);
         
-        test_cpu.X = Wrapping(0x42u8);
-        assert_eq!(test_cpu.X.0, 0x42);
+        test_cpu.X = Wrapped::byte(0x42);
+        assert_eq!(test_cpu.X, 0x42);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0000);
+        assert_eq!(test_cpu.PC, 0x0000);
 
         test_cpu.execute_ldx_imm(&mut memory);
-        assert_eq!(test_cpu.X.0, 0x00);
+        assert_eq!(test_cpu.X, 0x00);
         assert_eq!(test_cpu.Z, true);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0002);
+        assert_eq!(test_cpu.PC, 0x0002);
     }
     
     #[test]
     fn test_lnx_zeropage() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x69]);
         memory.data[0x69..0x6A].copy_from_slice(&[0x42]);
         
-        assert_eq!(test_cpu.X.0, 0x00);
+        assert_eq!(test_cpu.X, 0x00);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0000);
+        assert_eq!(test_cpu.PC, 0x0000);
         
         test_cpu.execute_ldx_zpg(&mut memory);
-        assert_eq!(test_cpu.X.0, 0x42);
+        assert_eq!(test_cpu.X, 0x42);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0002);
+        assert_eq!(test_cpu.PC, 0x0002);
     }
     
     #[test]
     fn test_lnx_zeropage_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x42]);
         memory.data[0x42..0x43].copy_from_slice(&[0x80]);
         
-        assert_eq!(test_cpu.X.0, 0x00);
+        assert_eq!(test_cpu.X, 0x00);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0000);
+        assert_eq!(test_cpu.PC, 0x0000);
 
         test_cpu.execute_ldx_zpg(&mut memory);
-        assert_eq!(test_cpu.X.0, 0x80);
+        assert_eq!(test_cpu.X, 0x80);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, true);
-        assert_eq!(test_cpu.PC.0, 0x0002);
+        assert_eq!(test_cpu.PC, 0x0002);
     }
     
     #[test]
     fn test_lnx_zeropage_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0xAB]);
         memory.data[0xAB..0xAC].copy_from_slice(&[0x00]);
         
-        test_cpu.X = Wrapping(0x69u8);
-        assert_eq!(test_cpu.X.0, 0x69);
+        test_cpu.X = Wrapped::byte(0x69);
+        assert_eq!(test_cpu.X, 0x69);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0000);
+        assert_eq!(test_cpu.PC, 0x0000);
 
         test_cpu.execute_ldx_zpg(&mut memory);
-        assert_eq!(test_cpu.X.0, 0x00);
+        assert_eq!(test_cpu.X, 0x00);
         assert_eq!(test_cpu.Z, true);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0002);
+        assert_eq!(test_cpu.PC, 0x0002);
     }
 }
 
@@ -325,114 +325,114 @@ mod ldy_tests {
 
     #[test]
     fn test_ldy_immediate() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x42]);
 
-        assert_eq!(test_cpu.Y.0, 0x00);
+        assert_eq!(test_cpu.Y, 0x00);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0000);
+        assert_eq!(test_cpu.PC, 0x0000);
         
         test_cpu.execute_ldy_imm(&mut memory);
-        assert_eq!(test_cpu.Y.0, 0x42);
+        assert_eq!(test_cpu.Y, 0x42);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0002);
+        assert_eq!(test_cpu.PC, 0x0002);
     }
     
     #[test]
     fn test_lny_immediate_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x80]);
         
-        assert_eq!(test_cpu.Y.0, 0x00);
+        assert_eq!(test_cpu.Y, 0x00);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0000);
+        assert_eq!(test_cpu.PC, 0x0000);
         
         test_cpu.execute_ldy_imm(&mut memory);
-        assert_eq!(test_cpu.Y.0, 0x80);
+        assert_eq!(test_cpu.Y, 0x80);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, true);
-        assert_eq!(test_cpu.PC.0, 0x0002);
+        assert_eq!(test_cpu.PC, 0x0002);
     }
     
     #[test]
     fn test_lny_immediate_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x00]);
         
-        test_cpu.Y = Wrapping(0x42u8);
-        assert_eq!(test_cpu.Y.0, 0x42);
+        test_cpu.Y = Wrapped::byte(0x42);
+        assert_eq!(test_cpu.Y, 0x42);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0000);
+        assert_eq!(test_cpu.PC, 0x0000);
         
         test_cpu.execute_ldy_imm(&mut memory);
-        assert_eq!(test_cpu.Y.0, 0x00);
+        assert_eq!(test_cpu.Y, 0x00);
         assert_eq!(test_cpu.Z, true);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0002);
+        assert_eq!(test_cpu.PC, 0x0002);
     }
     
     #[test]
     fn test_lny_zeropage() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x69]);
         memory.data[0x69..0x6A].copy_from_slice(&[0x42]);
         
-        assert_eq!(test_cpu.Y.0, 0x00);
+        assert_eq!(test_cpu.Y, 0x00);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0000);
+        assert_eq!(test_cpu.PC, 0x0000);
         
         test_cpu.execute_ldy_zpg(&mut memory);
-        assert_eq!(test_cpu.Y.0, 0x42);
+        assert_eq!(test_cpu.Y, 0x42);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0002);
+        assert_eq!(test_cpu.PC, 0x0002);
     }
     
     #[test]
     fn test_lny_zeropage_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x42]);
         memory.data[0x42..0x43].copy_from_slice(&[0x80]);
         
-        assert_eq!(test_cpu.Y.0, 0x00);
+        assert_eq!(test_cpu.Y, 0x00);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0000);
+        assert_eq!(test_cpu.PC, 0x0000);
         
         test_cpu.execute_ldy_zpg(&mut memory);
-        assert_eq!(test_cpu.Y.0, 0x80);
+        assert_eq!(test_cpu.Y, 0x80);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, true);
-        assert_eq!(test_cpu.PC.0, 0x0002);
+        assert_eq!(test_cpu.PC, 0x0002);
     }
     
     #[test]
     fn test_lny_zeropage_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0xAB]);
         memory.data[0xAB..0xAC].copy_from_slice(&[0x00]);
         
-        test_cpu.Y = Wrapping(0x69u8);
-        assert_eq!(test_cpu.Y.0, 0x69);
+        test_cpu.Y = Wrapped::byte(0x69);
+        assert_eq!(test_cpu.Y, 0x69);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0000);
+        assert_eq!(test_cpu.PC, 0x0000);
         
         test_cpu.execute_ldy_zpg(&mut memory);
-        assert_eq!(test_cpu.Y.0, 0x00);
+        assert_eq!(test_cpu.Y, 0x00);
         assert_eq!(test_cpu.Z, true);
         assert_eq!(test_cpu.N, false);
-        assert_eq!(test_cpu.PC.0, 0x0002);
+        assert_eq!(test_cpu.PC, 0x0002);
     }
 }

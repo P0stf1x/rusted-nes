@@ -34,7 +34,7 @@ impl CPU {
 // PHA IMPL
 impl CPU {
     fn execute_pha_imp(&mut self, memory: &mut MEM) {
-        self.push_stack(self.A.0, memory);
+        self.push_stack(self.A.value as u8, memory);
         self.PC += 1;
     }
 }
@@ -54,9 +54,9 @@ impl CPU {
 // PLA IMPL
 impl CPU {
     fn execute_pla_imp(&mut self, memory: &mut MEM) {
-        self.A = Wrapping(self.pull_stack(memory));
-        self.Z = (self.A.0 & 0b_1111_1111) == 0;
-        self.N = (self.A.0 & 0b_1000_0000) != 0;
+        self.A = Wrapped::byte(self.pull_stack(memory) as isize);
+        self.Z = (self.A.value & 0b_1111_1111) == 0;
+        self.N = (self.A.value & 0b_1000_0000) != 0;
         self.PC += 1;
     }
 }

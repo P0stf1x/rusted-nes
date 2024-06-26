@@ -40,7 +40,7 @@ impl CPU {
 
     fn execute_inc_zpgx(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 1) as u8);
-        memory_address += self.X;
+        memory_address += self.X.value as u8;
         let mut memory_value = Wrapping(memory.read(memory_address.0 as usize, 1) as u8);
         memory_value += 1;
         memory.write(memory_address.0 as usize, memory_value.0);
@@ -61,7 +61,7 @@ impl CPU {
 
     fn execute_inc_absx(&mut self, memory: &mut MEM) {
         let mut memory_address = Wrapping(memory.read(self.next_pc(), 2) as u16);
-        memory_address += self.X.0 as u16;
+        memory_address += self.X.value as u16;
         let mut memory_value = Wrapping(memory.read(memory_address.0 as usize, 1) as u8);
         memory_value += 1;
         memory.write(memory_address.0 as usize, memory_value.0);
@@ -74,9 +74,9 @@ impl CPU {
 // INX IMPL
 impl CPU {
     fn execute_inx_imp(&mut self) {
-        self.X = self.X + Wrapping(1);
-        self.Z = self.X.0 == 0;
-        self.N = self.X.0 & 0b_1000_0000 != 0;
+        self.X += 1;
+        self.Z = self.X == 0;
+        self.N = (self.X.value as u8) & 0b_1000_0000 != 0;
         self.PC += 1;
     }
 }
@@ -84,9 +84,9 @@ impl CPU {
 // INY IMPL
 impl CPU {
     fn execute_iny_imp(&mut self) {
-        self.Y = self.Y + Wrapping(1);
-        self.Z = self.Y.0 == 0;
-        self.N = self.Y.0 & 0b_1000_0000 != 0;
+        self.Y += 1;
+        self.Z = self.Y == 0;
+        self.N = (self.Y.value as u8) & 0b_1000_0000 != 0;
         self.PC += 1;
     }
 }
@@ -97,56 +97,56 @@ mod inx_tests {
 
     #[test]
     fn test_inx() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
 
-        assert_eq!(test_cpu.X.0, 0x00);
+        assert_eq!(test_cpu.X, 0x00);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
         
         test_cpu.execute_inx_imp();
-        assert_eq!(test_cpu.X.0, 0x01);
+        assert_eq!(test_cpu.X, 0x01);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
         
-        test_cpu.X = Wrapping(0x41);
+        test_cpu.X = Wrapped::byte(0x41);
         test_cpu.execute_inx_imp();
-        assert_eq!(test_cpu.X.0, 0x42);
+        assert_eq!(test_cpu.X, 0x42);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
         
-        test_cpu.X = Wrapping(0x68);
+        test_cpu.X = Wrapped::byte(0x68);
         test_cpu.execute_inx_imp();
-        assert_eq!(test_cpu.X.0, 0x69);
+        assert_eq!(test_cpu.X, 0x69);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
     }
     
     #[test]
     fn test_inx_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
-        test_cpu.X = Wrapping(0x7Fu8);
-        assert_eq!(test_cpu.X.0, 0x7F);
+        test_cpu.X = Wrapped::byte(0x7F);
+        assert_eq!(test_cpu.X, 0x7F);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
 
         test_cpu.execute_inx_imp();
-        assert_eq!(test_cpu.X.0, 0x80);
+        assert_eq!(test_cpu.X, 0x80);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, true);
     }
     
     #[test]
     fn test_inx_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
-        test_cpu.X = Wrapping(0xFFu8);
-        assert_eq!(test_cpu.X.0, 0xFF);
+        test_cpu.X = Wrapped::byte(0xFF);
+        assert_eq!(test_cpu.X, 0xFF);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
 
         test_cpu.execute_inx_imp();
-        assert_eq!(test_cpu.X.0, 0x00);
+        assert_eq!(test_cpu.X, 0x00);
         assert_eq!(test_cpu.Z, true);
         assert_eq!(test_cpu.N, false);
     }
@@ -160,56 +160,56 @@ mod iny_tests {
     fn test_iny() {
         // TODO: IMPLEMENT PC TEST
 
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
 
-        assert_eq!(test_cpu.Y.0, 0x00);
+        assert_eq!(test_cpu.Y, 0x00);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
         
         test_cpu.execute_iny_imp();
-        assert_eq!(test_cpu.Y.0, 0x01);
+        assert_eq!(test_cpu.Y, 0x01);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
         
-        test_cpu.Y = Wrapping(0x41);
+        test_cpu.Y = Wrapped::byte(0x41);
         test_cpu.execute_iny_imp();
-        assert_eq!(test_cpu.Y.0, 0x42);
+        assert_eq!(test_cpu.Y, 0x42);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
         
-        test_cpu.Y = Wrapping(0x68);
+        test_cpu.Y = Wrapped::byte(0x68);
         test_cpu.execute_iny_imp();
-        assert_eq!(test_cpu.Y.0, 0x69);
+        assert_eq!(test_cpu.Y, 0x69);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
     }
     
     #[test]
     fn test_iny_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
-        test_cpu.Y = Wrapping(0x7Fu8);
-        assert_eq!(test_cpu.Y.0, 0x7F);
+        test_cpu.Y = Wrapped::byte(0x7F);
+        assert_eq!(test_cpu.Y, 0x7F);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
 
         test_cpu.execute_iny_imp();
-        assert_eq!(test_cpu.Y.0, 0x80);
+        assert_eq!(test_cpu.Y, 0x80);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, true);
     }
     
     #[test]
     fn test_iny_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         
-        test_cpu.Y = Wrapping(0xFFu8);
-        assert_eq!(test_cpu.Y.0, 0xFF);
+        test_cpu.Y = Wrapped::byte(0xFF);
+        assert_eq!(test_cpu.Y, 0xFF);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
 
         test_cpu.execute_iny_imp();
-        assert_eq!(test_cpu.Y.0, 0x00);
+        assert_eq!(test_cpu.Y, 0x00);
         assert_eq!(test_cpu.Z, true);
         assert_eq!(test_cpu.N, false);
     }
