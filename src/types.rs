@@ -75,6 +75,18 @@ impl std::ops::Add<isize> for Wrapped {
     }
 }
 
+impl std::ops::AddAssign for Wrapped {
+    fn add_assign(&mut self, other: Self) {
+        self.value = (self.value + other.value).rem_euclid(self.size);
+    }
+}
+
+impl std::ops::AddAssign<isize> for Wrapped {
+    fn add_assign(&mut self, other: isize) {
+        self.value = (self.value + other).rem_euclid(self.size);
+    }
+}
+
 impl std::ops::Sub for Wrapped {
     type Output = Self;
 
@@ -94,6 +106,18 @@ impl std::ops::Sub<isize> for Wrapped {
             value: (self.value - other).rem_euclid(self.size),
             size: self.size,
         };
+    }
+}
+
+impl std::ops::SubAssign for Wrapped {
+    fn sub_assign(&mut self, other: Self) {
+        self.value = (self.value - other.value).rem_euclid(self.size);
+    }
+}
+
+impl std::ops::SubAssign<isize> for Wrapped {
+    fn sub_assign(&mut self, other: isize) {
+        self.value = (self.value - other).rem_euclid(self.size);
     }
 }
 
@@ -176,5 +200,49 @@ mod wrapped_tests {
 
         assert_eq!(a - b, 0xff);
         assert_eq!(a - c, 0xff);
+    }
+
+    #[test]
+    fn addition_assign() {
+        let mut a1 = Wrapped::byte(0x01);
+        let mut a2 = Wrapped::byte(0x01);
+        a1 += Wrapped::byte(0x01);
+        a2 += 0x01;
+
+        assert_eq!(a1, 0x02);
+        assert_eq!(a2, 0x02);
+    }
+
+    #[test]
+    fn addition_assign_wrapped() {
+        let mut a1 = Wrapped::byte(0xff);
+        let mut a2 = Wrapped::byte(0xff);
+        a1 += Wrapped::byte(0x01);
+        a2 += 0x01;
+
+        assert_eq!(a1, 0x00);
+        assert_eq!(a2, 0x00);
+    }
+
+    #[test]
+    fn subtraction_assign() {
+        let mut a1 = Wrapped::byte(0x01);
+        let mut a2 = Wrapped::byte(0x01);
+        a1 -= Wrapped::byte(0x01);
+        a2 -= 0x01;
+
+        assert_eq!(a1, 0x00);
+        assert_eq!(a2, 0x00);
+    }
+
+    #[test]
+    fn subtraction_assign_wrapped() {
+        let mut a1 = Wrapped::byte(0x00);
+        let mut a2 = Wrapped::byte(0x00);
+        a1 -= Wrapped::byte(0x01);
+        a2 -= 0x01;
+
+        assert_eq!(a1, 0xff);
+        assert_eq!(a2, 0xff);
     }
 }
