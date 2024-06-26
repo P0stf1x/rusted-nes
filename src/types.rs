@@ -64,12 +64,34 @@ impl std::ops::Add for Wrapped {
     }
 }
 
+impl std::ops::Add<isize> for Wrapped {
+    type Output = Self;
+
+    fn add(self, other: isize) -> Self {
+        return Self{
+            value: (self.value + other).rem_euclid(self.size),
+            size: self.size,
+        };
+    }
+}
+
 impl std::ops::Sub for Wrapped {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self::Output {
         return Self{
             value: (self.value - other.value).rem_euclid(self.size),
+            size: self.size,
+        };
+    }
+}
+
+impl std::ops::Sub<isize> for Wrapped {
+    type Output = Self;
+
+    fn sub(self, other: isize) -> Self::Output {
+        return Self{
+            value: (self.value - other).rem_euclid(self.size),
             size: self.size,
         };
     }
@@ -120,31 +142,39 @@ mod wrapped_tests {
     fn addition() {
         let a = Wrapped::byte(0x01);
         let b = Wrapped::byte(0x01);
+        let c = 0x01;
 
         assert_eq!(a + b, 0x02);
+        assert_eq!(a + c, 0x02);
     }
 
     #[test]
     fn addition_wrapped() {
         let a = Wrapped::byte(0xff);
         let b = Wrapped::byte(0x01);
+        let c = 0x01;
 
         assert_eq!(a + b, 0x00);
+        assert_eq!(a + c, 0x00);
     }
 
     #[test]
     fn subtraction() {
         let a = Wrapped::byte(0x01);
         let b = Wrapped::byte(0x01);
+        let c = 0x01;
 
         assert_eq!(a - b, 0x00);
+        assert_eq!(a - c, 0x00);
     }
 
     #[test]
     fn subtraction_wrapped() {
         let a = Wrapped::byte(0x00);
         let b = Wrapped::byte(0x01);
+        let c = 0x01;
 
         assert_eq!(a - b, 0xff);
+        assert_eq!(a - c, 0xff);
     }
 }
