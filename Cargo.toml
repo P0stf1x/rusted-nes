@@ -11,12 +11,18 @@ imgui = "0.11.0"
 glow = "0.12.0"
 imgui-glow-renderer = "0.11.0"
 imgui-sdl2-support = "0.11.0"
+[target.'cfg(not(target_os = "macos"))'.dependencies]
 sdl2 = "0.34.5"
+[target.'cfg(target_os = "macos")'.dependencies]
+sdl2 = { version = "0.34.5", features = ["use_mac_framework"] }
 
 [dev-dependencies]
 glow = "0.12.0"
 imgui-glow-renderer = "0.11.0"
+[target.'cfg(not(target_os = "macos"))'.dev-dependencies]
 sdl2 = { version = "0.34.5", features = ["bundled", "static-link"] }
+[target.'cfg(target_os = "macos")'.dev-dependencies]
+sdl2 = { version = "0.34.5", features = ["bundled", "static-link", "use_mac_framework"] }
 
 [build]
 rustc-link-lib = ["./include/SDL2.lib"]
