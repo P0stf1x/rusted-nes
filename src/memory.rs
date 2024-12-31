@@ -2,9 +2,8 @@
 
 use std::fs::File;
 
-pub static mut VBLANK_READS_VALUE: u32 = 0;
-
 pub mod ines;
+pub mod mappers;
 
 pub const MEMORY_SIZE: usize = 0x10000;
 
@@ -245,9 +244,7 @@ impl MEM {
         println!("prg_rom size: {}, {} blocks", parsed_ines.prg_rom.len(), parsed_ines.prg_rom.len()/(16*1024));
         println!("chr_rom size: {}, {} blocks", parsed_ines.chr_rom.len(), parsed_ines.chr_rom.len()/(8*1024));
 
-        // TODO: fill memory according to iNES mapper
-
-        todo!()
+        return mappers::map(parsed_ines);
     }
 }
 
@@ -288,9 +285,6 @@ impl MEM {
         return mirrored_address;
     }
 }
-
-pub const PRG_ROM_ADDR: usize = 0x8000;
-pub const PRG_ROM_ENTRY_ADDR: usize = 0xC000;
 
 #[cfg(test)]
 mod mirroring_tests {
@@ -385,4 +379,13 @@ mod mirroring_tests {
         assert_eq!(test_memory.get_mirrored_address(0x0000), 0x0000);
         assert_eq!(test_memory.get_mirrored_address(0x0001), 0x0000);
     }
+}
+
+// TODO: implement read-only regions
+// Read-only regions
+impl MEM {
+}
+
+#[cfg(test)]
+mod read_only_tests {
 }

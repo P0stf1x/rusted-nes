@@ -29,7 +29,7 @@ fn main() {
     let mut cpu: CPU = Default::default();
 
     // TODO: move to cpu init
-    cpu.PC = std::num::Wrapping(PRG_ROM_ENTRY_ADDR as u16);
+    cpu.reset(&mut memory);
     cpu.S = Wrapping(0xFDu8);
     cpu.I = true;
     memory.data[0x2002] = 0b_1000_0000; // FIXME: hack to make cpu think it's always in vblank
