@@ -4,6 +4,8 @@ use std::fs::File;
 
 pub static mut VBLANK_READS_VALUE: u32 = 0;
 
+pub mod ines;
+
 pub const MEMORY_SIZE: usize = 0x10000;
 
 pub struct MemoryRegion {
@@ -229,6 +231,23 @@ impl MEM {
         memory.data = data;
 
         return memory;
+    }
+
+    pub fn new_from_ines(file_path: &String) -> Self {
+        use std::fs;
+
+        let data = fs::read(file_path)
+        .expect("Should have been able to read the file");
+
+        use ines::*;
+        let parsed_ines = parse_file(&data);
+        println!("{:#?}", parsed_ines.header);
+        println!("prg_rom size: {}, {} blocks", parsed_ines.prg_rom.len(), parsed_ines.prg_rom.len()/(16*1024));
+        println!("chr_rom size: {}, {} blocks", parsed_ines.chr_rom.len(), parsed_ines.chr_rom.len()/(8*1024));
+
+        // TODO: fill memory according to iNES mapper
+
+        todo!()
     }
 }
 
