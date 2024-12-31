@@ -120,6 +120,10 @@ mod memory_region_test {
     }
 }
 
+pub struct WriteProtectedRegion {
+    protected_memory: MemoryRegion,
+}
+
 pub struct MemoryMirror {
     physical_memory: MemoryRegion,
     mirrored_memory: MemoryRegion,
@@ -128,6 +132,7 @@ pub struct MemoryMirror {
 pub struct MEM {
     pub data: Vec<u8>,
     mirroring: Vec<MemoryMirror>,
+    write_protection: Vec<WriteProtectedRegion>,
 }
 
 // Read/Write
@@ -142,9 +147,10 @@ impl MEM {
     }
 
     pub fn write(&mut self, address: usize, data: u8) {
-        // TODO: ADD SUPPORT FOR ROM
-        let mirrored_address = self.get_mirrored_address(address);
-        self.data[mirrored_address] = data;
+        if !self.is_protected(address) { // or should it check mirrored address?
+            let mirrored_address = self.get_mirrored_address(address);
+            self.data[mirrored_address] = data;
+        }
     }
 
     pub fn write_bulk(&mut self, address: usize, data: Vec<u8>) {
@@ -216,6 +222,7 @@ impl MEM {
         Self{
             data,
             mirroring: vec![],
+            write_protection: vec![],
         }
     }
 
@@ -381,11 +388,74 @@ mod mirroring_tests {
     }
 }
 
-// TODO: implement read-only regions
-// Read-only regions
+// Write protection
 impl MEM {
+    fn push_write_protected_region(&mut self, new_region: WriteProtectedRegion) {
+        for protected in &self.write_protection {
+            if new_region.protected_memory.intersects_region(&protected.protected_memory) {
+                // TODO: ideally it should combine them if they overlap since it could give speed up at runtime, although
+                // it most likely wouldn't be called at runtime, and even then it easily could be optimised inside mapper
+            }
+        }
+        self.write_protection.push(new_region);
+    }
+
+    fn is_protected(&self, address: usize) -> bool {
+        for region in &self.write_protection {
+            if region.protected_memory.inside_region(address) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 #[cfg(test)]
-mod read_only_tests {
+mod write_protection_tests {
+    use super::*;
+
+    #[test]
+    fn test_memory_protection_check() {
+        let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
+
+        assert_eq!(test_memory.is_protected(0xDEAD), false);
+
+        test_memory.push_write_protected_region(WriteProtectedRegion {
+            protected_memory: MemoryRegion {
+                region_address: 0xBEEF,
+                region_size: 1
+            }
+        });
+
+        assert_eq!(test_memory.is_protected(0xDEAD), false);
+        assert_eq!(test_memory.is_protected(0xBEEF), true);
+    }
+
+    #[test]
+    fn test_memory_not_protected() {
+        let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
+
+        assert_eq!(test_memory.data[0x0000], 0x00);
+        test_memory.write(0x0000, 1);
+        assert_eq!(test_memory.data[0x0000], 0x01);
+    }
+
+    #[test]
+    fn test_memory_protected() {
+        let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
+
+        test_memory.write(0x0000, 0xEF);
+
+        assert_eq!(test_memory.read(0x0000, 1), 0xEF);
+
+        test_memory.push_write_protected_region(WriteProtectedRegion {
+            protected_memory: MemoryRegion {
+                region_address: 0x0000,
+                region_size: 1
+            }
+        });
+
+        test_memory.write(0x0000, 0xBE);
+        assert_eq!(test_memory.read(0x0000, 1), 0xEF);
+    }
 }

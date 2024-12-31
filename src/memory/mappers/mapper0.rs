@@ -25,6 +25,13 @@ pub fn map(data: iNESData) -> MEM {
         2 => memory.write_bulk(0x8000, data.prg_rom[0x0000..0x7FFF].to_vec()),
         _ => panic!("Used mapper 0 but PRG ROM size is not [1-2]")
     }
-    // TODO: add ram (or rather write protection to non ram memory)
+    memory.push_write_protected_region(
+        crate::WriteProtectedRegion {
+            protected_memory: MemoryRegion {
+                region_address: 0x0000,
+                region_size: 0x8000
+            }
+        }
+    );
     return memory;
 }
