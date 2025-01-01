@@ -1,3 +1,5 @@
+use argparse::{ ArgumentParser, StoreFalse, StoreTrue, Store, ParseOption };
+
 use std::num::Wrapping;
 
 use crate::processor::*;
@@ -7,17 +9,33 @@ mod processor;
 mod memory;
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
+    let mut is_raw_image = false;
+    let mut entry_point: Option<usize> = None;
+    let mut file_path = String::new();
+    { // Limits argparse borrows to this scope
+        let mut argparser = ArgumentParser::new();
+        argparser.refer(&mut is_raw_image)
+            .add_option(&["--ines"], StoreFalse, "Parse as iNES rom (Default)")
+            .add_option(&["--raw"], StoreTrue, "Parse as raw image");
+        argparser.refer(&mut entry_point)
+            .add_option(&["-e", "--entry-point"], ParseOption, "Manually choose cpu entry point");
+        argparser.refer(&mut file_path)
+            .add_argument("rom image", Store, "Path to rom image");
+        argparser.parse_args_or_exit();
+    }
     let mut memory;
-    if args.len() > 1 {
-        memory = MEM::new_from(&args[1]);
+    if is_raw_image {
+        memory = MEM::new_from(&file_path);
     } else {
-        memory = MEM::new(MEMORY_SIZE);
+        memory = MEM::new_from_ines(&file_path);
     }
     let mut cpu: CPU = CPU::new();
 
     // TODO: move to cpu init
-    cpu.PC = std::num::Wrapping(PRG_ROM_ENTRY_ADDR as u16);
+    match entry_point {
+        None => cpu.reset(&mut memory),
+        Some(address) => cpu.PC = Wrapping(address as u16)
+    }
     cpu.S = Wrapping(0xFDu8);
     cpu.I = true;
     memory.data[0x2002] = 0b_1000_0000; // FIXME: hack to make cpu think it's always in vblank
