@@ -267,11 +267,6 @@ impl MEM {
         return Ok(());
     }
 
-    pub fn load_mapper_mirroring(&mut self, mapper: File) {
-        // TODO
-        todo!();
-    }
-
     fn is_mirrored(&self, address: usize) -> Option<&MemoryMirror> {
         for mirror in &self.mirroring {
             if mirror.mirrored_memory.inside_region(address) {
