@@ -1,5 +1,7 @@
 use std::num::Wrapping;
 
+use derive_new::new;
+
 use crate::MEM;
 
 use self::settings::Settings;
@@ -7,26 +9,39 @@ use self::settings::Settings;
 pub mod execution;
 pub mod settings;
 
-#[allow(non_snake_case)]
-#[allow(clippy::upper_case_acronyms)]
-#[derive(Default)]
+#[allow(non_snake_case, clippy::upper_case_acronyms)]
 #[derive(Debug)]
+#[derive(new)]
 pub struct CPU {
+    #[new(default)]
     pub PC: Wrapping<u16>,  // Program Count
+    #[new(default)]
     A: Wrapping<u8>,    // Accumulator
+    #[new(default)]
     X: Wrapping<u8>,    // Register X
+    #[new(default)]
     Y: Wrapping<u8>,    // Register Y
+    #[new(default)]
     pub S: Wrapping<u8>,    // Stack Pointer
     
+    #[new(default)]
     N: bool,
+    #[new(default)]
     V: bool,
+    #[new(default)]
     B: bool,
+    #[new(default)]
     D: bool,
+    #[new(default)]
     pub I: bool,
+    #[new(default)]
     Z: bool,
+    #[new(default)]
     C: bool,
-
+    
+    #[new(default)]
     settings: Settings,
+    #[new(default)]
     executed_opcodes: u32,
 }
 

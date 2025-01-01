@@ -206,7 +206,7 @@ mod ldx_tests {
 
     #[test]
     fn test_ldx_immediate() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x42]);
 
@@ -224,7 +224,7 @@ mod ldx_tests {
     
     #[test]
     fn test_lnx_immediate_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x80]);
         
@@ -242,7 +242,7 @@ mod ldx_tests {
     
     #[test]
     fn test_lnx_immediate_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x00]);
         
@@ -261,7 +261,7 @@ mod ldx_tests {
     
     #[test]
     fn test_lnx_zeropage() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x69]);
         memory.data[0x69..0x6A].copy_from_slice(&[0x42]);
@@ -280,7 +280,7 @@ mod ldx_tests {
     
     #[test]
     fn test_lnx_zeropage_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x42]);
         memory.data[0x42..0x43].copy_from_slice(&[0x80]);
@@ -299,7 +299,7 @@ mod ldx_tests {
     
     #[test]
     fn test_lnx_zeropage_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0xAB]);
         memory.data[0xAB..0xAC].copy_from_slice(&[0x00]);
@@ -325,7 +325,7 @@ mod ldy_tests {
 
     #[test]
     fn test_ldy_immediate() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x42]);
 
@@ -343,7 +343,7 @@ mod ldy_tests {
     
     #[test]
     fn test_lny_immediate_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x80]);
         
@@ -361,7 +361,7 @@ mod ldy_tests {
     
     #[test]
     fn test_lny_immediate_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x00]);
         
@@ -380,7 +380,7 @@ mod ldy_tests {
     
     #[test]
     fn test_lny_zeropage() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x69]);
         memory.data[0x69..0x6A].copy_from_slice(&[0x42]);
@@ -399,7 +399,7 @@ mod ldy_tests {
     
     #[test]
     fn test_lny_zeropage_negative() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0x42]);
         memory.data[0x42..0x43].copy_from_slice(&[0x80]);
@@ -418,7 +418,7 @@ mod ldy_tests {
     
     #[test]
     fn test_lny_zeropage_zero() {
-        let mut test_cpu: CPU = Default::default();
+        let mut test_cpu: CPU = CPU::new();
         let mut memory: MEM = MEM::new(MEMORY_SIZE);
         memory.data[0..2].copy_from_slice(&[0xA2, 0xAB]);
         memory.data[0xAB..0xAC].copy_from_slice(&[0x00]);

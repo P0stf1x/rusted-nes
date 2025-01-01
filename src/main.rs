@@ -29,7 +29,7 @@ fn main() {
     } else {
         memory = MEM::new_from_ines(&file_path);
     }
-    let mut cpu: CPU = Default::default();
+    let mut cpu: CPU = CPU::new();
 
     // TODO: move to cpu init
     match entry_point {
