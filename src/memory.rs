@@ -282,7 +282,7 @@ impl MEM {
         if let Some(mirror) = self.is_mirrored(address) {
             let physical_start = mirror.physical_memory.region_address;
             let mirrored_start = mirror.mirrored_memory.region_address;
-            mirrored_address = address - mirrored_start - physical_start;
+            mirrored_address = (address - mirrored_start) + physical_start;
         }
         return mirrored_address;
     }
@@ -342,6 +342,55 @@ mod mirroring_tests {
         assert_eq!(test_memory.read(0x0000, 1), 0xAB);
         assert_eq!(test_memory.data[0x0001], 0xCD);
         assert_eq!(test_memory.read(0x0001, 1), 0xAB);
+    }
+
+    #[test]
+    fn test_memory_mirroring_non_single_range() {
+        let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
+
+        test_memory.write_bulk(0x0002, vec![0xEF, 0xBE, 0xAD, 0xDE]);
+
+        assert_eq!(test_memory.read(0x0002, 4), 0xDEADBEEF, "Couldn't prepare memory for test 2");
+
+        assert_eq!(test_memory.data[0x0005], 0xDE);
+        assert_eq!(test_memory.read(0x0005, 1), 0xDE);
+        assert_eq!(test_memory.data[0x0004], 0xAD);
+        assert_eq!(test_memory.read(0x0004, 1), 0xAD);
+        assert_eq!(test_memory.data[0x0003], 0xBE);
+        assert_eq!(test_memory.read(0x0003, 1), 0xBE);
+        assert_eq!(test_memory.data[0x0002], 0xEF);
+        assert_eq!(test_memory.read(0x0002, 1), 0xEF);
+
+        test_memory.push_mirrored_range(MemoryMirror{
+            physical_memory: MemoryRegion{
+                region_address: 0x0002,
+                region_size: 2,
+            },
+            mirrored_memory: MemoryRegion{
+                region_address: 0x0004,
+                region_size: 2,
+            },
+        }).unwrap();
+
+        assert_eq!(test_memory.data[0x0002..=0x0005], [0xEF, 0xBE, 0xAD, 0xDE]);
+        assert_eq!(test_memory.read(0x0002, 2), 0xBEEF);
+        assert_eq!(test_memory.read(0x0004, 2), 0xBEEF);
+
+        test_memory.mirroring.pop();
+        test_memory.push_mirrored_range(MemoryMirror{
+            physical_memory: MemoryRegion{
+                region_address: 0x0004,
+                region_size: 2,
+            },
+            mirrored_memory: MemoryRegion{
+                region_address: 0x0002,
+                region_size: 2,
+            },
+        }).unwrap();
+
+        assert_eq!(test_memory.data[0x0002..=0x0005], [0xEF, 0xBE, 0xAD, 0xDE]);
+        assert_eq!(test_memory.read(0x0002, 2), 0xDEAD);
+        assert_eq!(test_memory.read(0x0004, 2), 0xDEAD);
     }
 
     #[test]
