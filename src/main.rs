@@ -1,12 +1,15 @@
 use argparse::{ ArgumentParser, StoreFalse, StoreTrue, Store, ParseOption };
 
 use std::num::Wrapping;
+use std::thread;
 
 use crate::processor::*;
 use crate::memory::*;
+use crate::pixel_processor::*;
 
 mod processor;
 mod memory;
+mod pixel_processor;
 
 fn main() {
     let mut is_raw_image = false;
@@ -18,9 +21,9 @@ fn main() {
             .add_option(&["--ines"], StoreFalse, "Parse as iNES rom (Default)")
             .add_option(&["--raw"], StoreTrue, "Parse as raw image");
         argparser.refer(&mut entry_point)
-            .add_option(&["-e", "--entry-point"], ParseOption, "Manually choose cpu entry point");
+            .add_option(&["-e", "--entry-point"], ParseOption, "Manually choose cpu entry point"); // HEX not supported
         argparser.refer(&mut file_path)
-            .add_argument("rom image", Store, "Path to rom image");
+            .add_argument("rom image", Store, "Path to rom image").required();
         argparser.parse_args_or_exit();
     }
     let mut memory;
@@ -52,17 +55,22 @@ fn main() {
         Ok(mut f) => f.write_all(&memory.data),
         Err(_) => Ok(println!("No file")),
     };
-    
-    loop {
-        if cpu.execute(&mut memory).is_err() {
-            // TODO: use logger instead
-            println!("");
-            println!("-----------------------------");
-            println!("WE CRASHED");
-            println!("{:#04X?}", cpu);
-            println!("{:#04X}", memory.read(cpu.PC.0 as usize, 1));
-            println!("-----------------------------");
-            panic!();
-        };
-    }
+
+    // Memory pointer since in rust pointers aren't Sync/Send
+    let memory_pointer = MemPtrWrapper(&mut memory as *mut MEM);
+
+    let thread_handle = thread::spawn(move || { // macOS doesn't like it when window is created not from main thread so we put cpu on the other thread 🤷🏻‍♂️
+        while cpu.execute(&mut memory).is_ok() { // emulator loop
+        }
+        // TODO: use logger instead
+        println!("");
+        println!("-----------------------------");
+        println!("WE CRASHED");
+        println!("{:#04X?}", cpu);
+        println!("{:#04X}", memory.read(cpu.PC.0 as usize, 1));
+        println!("-----------------------------");
+    });
+
+    let mut ppu = PPU::new(memory_pointer);
+    ppu.run();
 }

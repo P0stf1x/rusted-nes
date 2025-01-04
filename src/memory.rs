@@ -251,7 +251,15 @@ impl MEM {
         println!("prg_rom size: {}, {} blocks", parsed_ines.prg_rom.len(), parsed_ines.prg_rom.len()/(16*1024));
         println!("chr_rom size: {}, {} blocks", parsed_ines.chr_rom.len(), parsed_ines.chr_rom.len()/(8*1024));
 
-        return mappers::map(parsed_ines);
+        let mut memory = mappers::map(parsed_ines);
+
+        // PPU registers mirroring
+        memory.push_mirrored_range(MemoryMirror {
+            physical_memory: MemoryRegion { region_address: 0x2000, region_size: 0x0008 },
+            mirrored_memory: MemoryRegion { region_address: 0x2008, region_size: 0x1FF8 }
+        }).unwrap();
+
+        return memory;
     }
 }
 
