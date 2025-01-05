@@ -2,8 +2,11 @@
 
 use std::fs::File;
 
+use ppu_memory::PPU_MEM;
+
 pub mod ines;
 pub mod mappers;
+pub mod ppu_memory;
 
 pub const MEMORY_SIZE: usize = 0x10000;
 
@@ -239,7 +242,7 @@ impl MEM {
         return memory;
     }
 
-    pub fn new_from_ines(file_path: &String) -> Self {
+    pub fn new_from_ines(file_path: &String) -> (Self, PPU_MEM) {
         use std::fs;
 
         let data = fs::read(file_path)
@@ -251,15 +254,9 @@ impl MEM {
         println!("prg_rom size: {}, {} blocks", parsed_ines.prg_rom.len(), parsed_ines.prg_rom.len()/(16*1024));
         println!("chr_rom size: {}, {} blocks", parsed_ines.chr_rom.len(), parsed_ines.chr_rom.len()/(8*1024));
 
-        let mut memory = mappers::map(parsed_ines);
+        let (memory, ppu_memory) = mappers::map(parsed_ines);
 
-        // PPU registers mirroring
-        memory.push_mirrored_range(MemoryMirror {
-            physical_memory: MemoryRegion { region_address: 0x2000, region_size: 0x0008 },
-            mirrored_memory: MemoryRegion { region_address: 0x2008, region_size: 0x1FF8 }
-        }).unwrap();
-
-        return memory;
+        return (memory, ppu_memory);
     }
 }
 
@@ -437,6 +434,36 @@ mod mirroring_tests {
 
         assert_eq!(test_memory.get_mirrored_address(0x0000), 0x0000);
         assert_eq!(test_memory.get_mirrored_address(0x0001), 0x0000);
+
+        let mut test_memory1: MEM = MEM::new(MEMORY_SIZE);
+
+        test_memory1.push_mirrored_range(MemoryMirror{
+            physical_memory: MemoryRegion{
+                region_address: 0x0002,
+                region_size: 2,
+            },
+            mirrored_memory: MemoryRegion{
+                region_address: 0x0004,
+                region_size: 2,
+            },
+        }).unwrap();
+        test_memory1.push_mirrored_range(MemoryMirror{
+            physical_memory: MemoryRegion{
+                region_address: 0x0002,
+                region_size: 2,
+            },
+            mirrored_memory: MemoryRegion{
+                region_address: 0x0006,
+                region_size: 4,
+            },
+        }).unwrap();
+
+        assert_eq!(test_memory1.get_mirrored_address(0x0002), 0x0002);
+        assert_eq!(test_memory1.get_mirrored_address(0x0003), 0x0003);
+        assert_eq!(test_memory1.get_mirrored_address(0x0004), 0x0002);
+        assert_eq!(test_memory1.get_mirrored_address(0x0005), 0x0003);
+        assert_eq!(test_memory1.get_mirrored_address(0x0006), 0x0002);
+        assert_eq!(test_memory1.get_mirrored_address(0x0007), 0x0003);
     }
 }
 

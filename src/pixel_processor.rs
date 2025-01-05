@@ -1,6 +1,7 @@
 use std::time::Instant;
 
 use minifb::{ Window, WindowOptions, Key };
+use ppu_memory::PPU_MEM;
 
 use crate::memory::*;
 
@@ -11,13 +12,15 @@ unsafe impl Send for MemPtrWrapper {}
 
 pub struct PPU {
     memory_pointer: MemPtrWrapper,
+    #[allow(unused)]
     framebuffer: Vec<u32>,
     window: Window,
-    // should_close: bool,
+    #[allow(unused)]
+    ppu_memory: PPU_MEM,
 }
 
 impl PPU {
-    pub fn new(memory_pointer: MemPtrWrapper) -> Self {
+    pub fn new(memory_pointer: MemPtrWrapper, ppu_memory: PPU_MEM) -> Self {
         let window_options = WindowOptions {
             borderless: false,
             title: true,
@@ -38,6 +41,7 @@ impl PPU {
             memory_pointer,
             framebuffer: vec![0; 256*240],
             window,
+            ppu_memory,
         }
     }
 

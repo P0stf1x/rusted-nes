@@ -27,10 +27,12 @@ fn main() {
         argparser.parse_args_or_exit();
     }
     let mut memory;
+    let mut ppu_memory;
     if is_raw_image {
         memory = MEM::new_from(&file_path);
+        unimplemented!();
     } else {
-        memory = MEM::new_from_ines(&file_path);
+        (memory, ppu_memory) = MEM::new_from_ines(&file_path);
     }
     let mut cpu: CPU = CPU::new();
 
@@ -71,6 +73,6 @@ fn main() {
         println!("-----------------------------");
     });
 
-    let mut ppu = PPU::new(memory_pointer);
+    let mut ppu = PPU::new(memory_pointer, ppu_memory);
     ppu.run();
 }
