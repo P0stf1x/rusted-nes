@@ -140,7 +140,7 @@ pub struct MEM {
 
 // Read/Write
 impl MEM {
-    pub fn read(&mut self, address: usize, size: usize) -> usize {
+    pub fn read(&self, address: usize, size: usize) -> usize {
         let mut val: usize = 0;
         for i in 0..size {
             let mirrored_address = self.get_mirrored_address(address+i);

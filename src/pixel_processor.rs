@@ -1,9 +1,13 @@
 use std::time::Instant;
 
-use minifb::{ Window, WindowOptions, Key };
-use ppu_memory::PPU_MEM;
+use minifb::{ Window, Key };
 
 use crate::memory::*;
+use ppu_memory::PPU_MEM;
+
+pub mod tile;
+pub mod rendering;
+pub mod helper;
 
 #[derive(Clone, Copy)]
 pub struct MemPtrWrapper(pub *mut MEM);
@@ -14,43 +18,20 @@ pub struct PPU {
     memory_pointer: MemPtrWrapper,
     #[allow(unused)]
     framebuffer: Vec<u32>,
-    window: Window,
-    #[allow(unused)]
+    main_window: Window,
+    pattern_table_window: Window,
     ppu_memory: PPU_MEM,
 }
 
 impl PPU {
     pub fn new(memory_pointer: MemPtrWrapper, ppu_memory: PPU_MEM) -> Self {
-        let window_options = WindowOptions {
-            borderless: false,
-            title: true,
-            resize: false,
-            scale: minifb::Scale::X4,
-            scale_mode: minifb::ScaleMode::AspectRatioStretch,
-            topmost: false,
-            transparency: false, // crash on macos
-            none: false, //?
-        };
-        let window = Window::new(
-            "Rusted NES",
-            256,
-            240,
-            window_options
-        ).unwrap();
         return Self {
             memory_pointer,
             framebuffer: vec![0; 256*240],
-            window,
+            main_window: Self::create_main_window(),
+            pattern_table_window: Self::create_pattern_window(),
             ppu_memory,
         }
-    }
-
-    fn render_frame(&mut self) {
-        // For now there's only minifb rendering
-        // TODO: implement ImGUI rendering
-        self.window
-            .update_with_buffer(&[0; 256*240], 256, 240)
-            .unwrap();
     }
 
     pub fn run(&mut self) {
@@ -58,10 +39,11 @@ impl PPU {
         let mut frame_counter = 0;
         const PIXEL:f64 = 186.2433862;
         const SCANLINE:f64 = 341.*PIXEL;
-        while self.window.is_open() && !self.window.is_key_down(Key::Escape) { // Frame start
+        while self.main_window.is_open() && !self.main_window.is_key_down(Key::Escape) { // Frame start
             let frame_start = Instant::now();
             // TODO: process user input
             self.render_frame(); // We render frame at 0:0
+            if self.pattern_table_window.is_open() { self.render_pattern_table(); } // If pattern table is open - we also render it
             while frame_start.elapsed().as_nanos() < (241.*SCANLINE) as u128 {} // For 0:0 through 240:341 we wait till VBlank
             self.set_vblank(); // We set VBlank at 241:0
             while frame_start.elapsed().as_nanos() < (262.*SCANLINE) as u128 {} // For 241:0 through 261:341 we wait till VBlank
