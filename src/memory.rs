@@ -1,12 +1,14 @@
 #![allow(dead_code)]
 
-use std::fs::File;
-
 use ppu_memory::PPU_MEM;
 
 pub mod ines;
 pub mod mappers;
 pub mod ppu_memory;
+
+mod hooks;
+
+pub use hooks::{ MemoryHook, MemoryOperation, MemoryEvent };
 
 pub const MEMORY_SIZE: usize = 0x10000;
 
@@ -136,20 +138,28 @@ pub struct MEM {
     pub data: Vec<u8>,
     mirroring: Vec<MemoryMirror>,
     write_protection: Vec<WriteProtectedRegion>,
+    hooks: Vec<MemoryHook>
 }
 
 // Read/Write
 impl MEM {
     pub fn read(&self, address: usize, size: usize) -> usize {
-        let mut val: usize = 0;
+        let mut result: usize = 0;
         for i in 0..size {
             let mirrored_address = self.get_mirrored_address(address+i);
-            val += (self.data[mirrored_address] as usize) << 8*i
+            let value = self.data[mirrored_address];
+            for hook in self.get_hooks(MemoryOperation::Read, mirrored_address) {
+                hook.send(mirrored_address, value);
+            };
+            result += (value as usize) << 8*i
         }
-        return val;
+        return result;
     }
 
     pub fn write(&mut self, address: usize, data: u8) {
+        for hook in self.get_hooks(MemoryOperation::Write, address) {
+            hook.send(address, data);
+        };
         if !self.is_protected(address) { // or should it check mirrored address?
             let mirrored_address = self.get_mirrored_address(address);
             self.data[mirrored_address] = data;
@@ -226,6 +236,7 @@ impl MEM {
             data,
             mirroring: vec![],
             write_protection: vec![],
+            hooks: vec![],
         }
     }
 
