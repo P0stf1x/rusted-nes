@@ -18,6 +18,13 @@ pub struct MemoryRegion {
 }
 
 impl MemoryRegion {
+    pub fn new(start: usize, length: usize) -> Self {
+        return Self {
+            region_address: start,
+            region_size: length,
+        }
+    }
+
     pub fn intersects_region(&self, region: &MemoryRegion) -> bool {
         let region1_start = self.region_address;
         let region1_end = self.region_address + self.region_size - 1;

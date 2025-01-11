@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{ sync::mpsc::{channel, Receiver, Sender}, time::Instant };
 
 use minifb::{ Window, Key };
 
@@ -8,6 +8,7 @@ use ppu_memory::PPU_MEM;
 pub mod tile;
 pub mod rendering;
 pub mod helper;
+mod memory_events_processor;
 
 #[derive(Clone, Copy)]
 pub struct MemPtrWrapper(pub *mut MEM);
@@ -21,17 +22,25 @@ pub struct PPU {
     main_window: Window,
     pattern_table_window: Window,
     ppu_memory: PPU_MEM,
+    memory_events_rx: Receiver<MemoryEvent>,
+    vram_address: usize,
+    w: bool,
 }
 
 impl PPU {
-    pub fn new(memory_pointer: MemPtrWrapper, ppu_memory: PPU_MEM) -> Self {
-        return Self {
+    pub fn new(memory_pointer: MemPtrWrapper, ppu_memory: PPU_MEM) -> (Self, Sender<MemoryEvent>) {
+        let (tx, memory_events_rx): (Sender<MemoryEvent>, Receiver<MemoryEvent>) = channel();
+        return (Self {
             memory_pointer,
             framebuffer: vec![0; 256*240],
             main_window: Self::create_main_window(),
             pattern_table_window: Self::create_pattern_window(),
             ppu_memory,
-        }
+            memory_events_rx,
+            vram_address: 0,
+            w: false,
+        },
+        tx)
     }
 
     pub fn run(&mut self) {
@@ -44,9 +53,13 @@ impl PPU {
             // TODO: process user input
             self.render_frame(); // We render frame at 0:0
             if self.pattern_table_window.is_open() { self.render_pattern_table(); } // If pattern table is open - we also render it
-            while frame_start.elapsed().as_nanos() < (241.*SCANLINE) as u128 {} // For 0:0 through 240:341 we wait till VBlank
+            while frame_start.elapsed().as_nanos() < (241.*SCANLINE) as u128 {
+                self.process_memory_events(); // For 0:0 through 240:341 we wait till VBlank + process memory events
+            }
             self.set_vblank(); // We set VBlank at 241:0
-            while frame_start.elapsed().as_nanos() < (262.*SCANLINE) as u128 {} // For 241:0 through 261:341 we wait till VBlank
+            while frame_start.elapsed().as_nanos() < (262.*SCANLINE) as u128 {
+                self.process_memory_events(); // For 241:0 through 261:341 we wait till VBlank end + process memory events
+            }
             self.clear_vblank(); // We clear VBlank at 262:0
             frame_counter += 1;
             if fps_counter.elapsed().as_millis()>=10000 {

@@ -1,4 +1,4 @@
-use super::{ ines::iNESData, ppu_memory::PPU_MEM, MemoryMirror, MemoryRegion, MEM };
+use super::{ ines::iNESData, ppu_memory::PPU_MEM, MemoryMirror, MemoryRegion, WriteProtectedRegion, MEM };
 
 pub mod mapper0;
 
@@ -23,12 +23,18 @@ fn add_write_protection_and_mirroring((mut memory, mut ppu_memory): (MEM, PPU_ME
         physical_memory: MemoryRegion { region_address: 0x0000, region_size: 0x0800 },
         mirrored_memory: MemoryRegion { region_address: 0x0800, region_size: 0x0800 }
     }).unwrap();
-    
+
     // PPU palette ram indexes
     ppu_memory.push_mirrored_range(MemoryMirror {
         physical_memory: MemoryRegion { region_address: 0x3F00, region_size: 0x0020 },
         mirrored_memory: MemoryRegion { region_address: 0x3F20, region_size: 0x00E0 }
     }).unwrap();
+
+    // You shouldn't be able to write to PPU registers directly, it all done via hooks
+    memory.push_write_protected_region(WriteProtectedRegion { protected_memory: MemoryRegion {
+        region_address: 0x2000,
+        region_size: 0x0008
+    }});
     return (memory, ppu_memory);
 }
 

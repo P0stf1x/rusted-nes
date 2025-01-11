@@ -258,4 +258,9 @@ mod memory_hook_tests {
         }));
         assert_eq!(rx4.try_recv(), Err(TryRecvError::Empty));
     }
+
+    #[cfg(test)]
+    fn test_write_hook_on_write_protected() {
+        // TODO
+    }
 }

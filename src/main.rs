@@ -27,7 +27,7 @@ fn main() {
         argparser.parse_args_or_exit();
     }
     let mut memory;
-    let mut ppu_memory;
+    let ppu_memory;
     if is_raw_image {
         memory = MEM::new_from(&file_path);
         unimplemented!();
@@ -43,7 +43,7 @@ fn main() {
     }
     cpu.S = Wrapping(0xFDu8);
     cpu.I = true;
-    memory.data[0x2002] = 0b_1000_0000; // FIXME: hack to make cpu think it's always in vblank
+    // memory.data[0x2002] = 0b_1000_0000; // FIXME: hack to make cpu think it's always in vblank
     
     use std::io::Write;
     use std::fs;
@@ -61,6 +61,10 @@ fn main() {
     // Memory pointer since in rust pointers aren't Sync/Send
     let memory_pointer = MemPtrWrapper(&mut memory as *mut MEM);
 
+    let (mut ppu, ppu_tx) = PPU::new(memory_pointer, ppu_memory, cpu_pointer);
+    memory.push_hook(MemoryOperation::Read, MemoryRegion::new(0x2000, 0x0008), ppu_tx.clone());
+    memory.push_hook(MemoryOperation::Write, MemoryRegion::new(0x2000, 0x0008), ppu_tx);
+
     let thread_handle = thread::spawn(move || { // macOS doesn't like it when window is created not from main thread so we put cpu on the other thread 🤷🏻‍♂️
         while cpu.execute(&mut memory).is_ok() { // emulator loop
         }
@@ -73,6 +77,5 @@ fn main() {
         println!("-----------------------------");
     });
 
-    let mut ppu = PPU::new(memory_pointer, ppu_memory);
     ppu.run();
 }
