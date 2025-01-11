@@ -6,18 +6,25 @@ impl PPU {
     pub(super) fn render_frame(&mut self) {
         // For now there's only minifb rendering
         // TODO: implement ImGUI rendering
+        let mut screen = [0u32; 256*240];
+        for i in 0..32*30 { // Each byte is 8x8 sprite index so in turn we fill 256x240 pixels
+            let required_tile = self.ppu_memory.read(0x2000+i, 1);
+            let sprite = &Tile::get(&self.ppu_memory, required_tile, false).rendered();
+            overlay_sprite(&mut screen, sprite, (i%32)*8, (i/32)*8, 256);
+        }
         self.main_window
-            .update_with_buffer(&[0; 256*240], 256, 240)
+            .update_with_buffer(&screen, 256, 240)
             .unwrap();
     }
 
     pub(super) fn render_pattern_table(&mut self) {
+        return; // FIXME: for some reason rendering two windows bugs minifb
         let mut pattern_screen = [0u32; 256*128];
         for bit_plane in 0..=1 {
             for y in 0..16 {
                 for x in 0..16 {
                     let sprite = &Tile::get(&self.ppu_memory, x+y*8, bit_plane!=0).rendered();
-                    overlay_sprite(&mut pattern_screen, sprite, x*8+bit_plane*128, y*8, 256, 8);
+                    overlay_sprite(&mut pattern_screen, sprite, x*8+bit_plane*128, y*8, 256);
                 }
             }
         }
