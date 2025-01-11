@@ -60,6 +60,7 @@ fn main() {
 
     // Memory pointer since in rust pointers aren't Sync/Send
     let memory_pointer = MemPtrWrapper(&mut memory as *mut MEM);
+    let cpu_pointer = CPUPtrWrapper(&mut cpu as *mut CPU);
 
     let (mut ppu, ppu_tx) = PPU::new(memory_pointer, ppu_memory, cpu_pointer);
     memory.push_hook(MemoryOperation::Read, MemoryRegion::new(0x2000, 0x0008), ppu_tx.clone());

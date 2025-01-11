@@ -14,6 +14,10 @@ mod memory_events_processor;
 pub struct MemPtrWrapper(pub *mut MEM);
 unsafe impl Sync for MemPtrWrapper {}
 unsafe impl Send for MemPtrWrapper {}
+#[derive(Clone, Copy)]
+pub struct CPUPtrWrapper(pub *mut crate::CPU);
+unsafe impl Sync for CPUPtrWrapper {}
+unsafe impl Send for CPUPtrWrapper {}
 
 pub struct PPU {
     memory_pointer: MemPtrWrapper,
@@ -25,10 +29,11 @@ pub struct PPU {
     memory_events_rx: Receiver<MemoryEvent>,
     vram_address: usize,
     w: bool,
+    cpu_pointer: CPUPtrWrapper,
 }
 
 impl PPU {
-    pub fn new(memory_pointer: MemPtrWrapper, ppu_memory: PPU_MEM) -> (Self, Sender<MemoryEvent>) {
+    pub fn new(memory_pointer: MemPtrWrapper, ppu_memory: PPU_MEM, cpu_pointer: CPUPtrWrapper) -> (Self, Sender<MemoryEvent>) {
         let (tx, memory_events_rx): (Sender<MemoryEvent>, Receiver<MemoryEvent>) = channel();
         return (Self {
             memory_pointer,
@@ -39,6 +44,7 @@ impl PPU {
             memory_events_rx,
             vram_address: 0,
             w: false,
+            cpu_pointer
         },
         tx)
     }
@@ -57,6 +63,8 @@ impl PPU {
                 self.process_memory_events(); // For 0:0 through 240:341 we wait till VBlank + process memory events
             }
             self.set_vblank(); // We set VBlank at 241:0
+            // FIXME: should be only called if enabled in PPUCTRL
+            self.call_nmi();
             while frame_start.elapsed().as_nanos() < (262.*SCANLINE) as u128 {
                 self.process_memory_events(); // For 241:0 through 261:341 we wait till VBlank end + process memory events
             }
@@ -71,6 +79,10 @@ impl PPU {
                 fps_counter = Instant::now();
             }
         }
+    }
+
+    fn call_nmi(&self) {
+        unsafe{(*self.cpu_pointer.0).nmi((&mut *self.memory_pointer.0));};
     }
 
     fn set_vblank(&self) {
