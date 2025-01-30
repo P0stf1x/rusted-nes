@@ -1,6 +1,6 @@
 use minifb::{ Window, WindowOptions };
 
-use super::{ helper::overlay_sprite, tile::Tile, PPU };
+use super::{ helper::overlay_sprite, tile::{self, Tile}, PPU };
 
 impl PPU {
     pub(super) fn render_frame(&mut self) {
@@ -8,9 +8,9 @@ impl PPU {
         // TODO: implement ImGUI rendering
         let mut screen = [0u32; 256*240];
         for i in 0..32*30 { // Each byte is 8x8 sprite index so in turn we fill 256x240 pixels
-            let required_tile = self.ppu_memory.read(0x2000+i, 1);
-            let sprite = &Tile::get(&self.ppu_memory, required_tile, false).rendered();
-            overlay_sprite(&mut screen, sprite, (i%32)*8, (i/32)*8, 256);
+            // TODO: It renders only first plane right now
+            let (tile, tile_palette) = tile::get_tile_and_palette(&self.ppu_memory, i, false);
+            overlay_sprite(&mut screen, &tile.rendered(tile_palette), (i%32)*8, (i/32)*8, 256);
         }
         self.main_window
             .update_with_buffer(&screen, 256, 240)
@@ -23,8 +23,9 @@ impl PPU {
         for bit_plane in 0..=1 {
             for y in 0..16 {
                 for x in 0..16 {
-                    let sprite = &Tile::get(&self.ppu_memory, x+y*8, bit_plane!=0).rendered();
-                    overlay_sprite(&mut pattern_screen, sprite, x*8+bit_plane*128, y*8, 256);
+                    let tile_palette = tile::PixelPalette::get_sample_palette();
+                    let tile = &Tile::get(&self.ppu_memory, x+y*8, bit_plane!=0).rendered(tile_palette);
+                    overlay_sprite(&mut pattern_screen, tile, x*8+bit_plane*128, y*8, 256);
                 }
             }
         }
