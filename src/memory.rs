@@ -4,6 +4,9 @@ use std::fs::File;
 
 pub mod ines;
 pub mod mappers;
+mod combinatorics;
+
+pub use combinatorics::combine_operands;
 
 pub const MEMORY_SIZE: usize = 0x10000;
 

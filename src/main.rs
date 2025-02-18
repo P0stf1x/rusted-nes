@@ -34,7 +34,7 @@ fn main() {
     // TODO: move to cpu init
     match entry_point {
         None => cpu.reset(&mut memory),
-        Some(address) => cpu.PC = Wrapping(address as u16)
+        Some(address) => cpu.store_pc(address as u16),
     }
     cpu.S = Wrapping(0xFDu8);
     cpu.I = true;

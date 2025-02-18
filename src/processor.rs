@@ -8,6 +8,7 @@ use self::settings::Settings;
 
 pub mod execution;
 pub mod settings;
+pub mod instruction;
 
 #[allow(non_snake_case, clippy::upper_case_acronyms)]
 #[derive(Debug)]
@@ -307,18 +308,18 @@ impl CPU {
 
 impl CPU {
     pub fn push_stack(&mut self, data: u8, memory: &mut MEM) {
-        memory.data[0x0100 + self.S.0 as usize] = data;
-        self.S -= 1;
+        memory.write(0x0100 + self.S.0 as usize, data);
+        self.decrement_s();
     }
 
     pub fn pull_stack(&mut self, memory: &mut MEM) -> u8 {
-        self.S += 1;
-        let memory_address = 0x0100 + self.S.0 as usize;
+        self.increment_s();
+        let memory_address = 0x0100 + self.get_s() as usize;
         let val = memory.read(memory_address, 1) as u8;
         return val;
     }
 
-    pub fn store_status(&mut self) -> u8 {
+    pub fn store_status(&self) -> u8 {
         let mut status: u8 = 0b_0010_0000;
         if self.C {status |= 0b_0000_0001};
         if self.Z {status |= 0b_0000_0010};
@@ -340,25 +341,88 @@ impl CPU {
         if status & 0b_1000_0000 != 0 {self.N = true} else {self.N = false};
     }
 
-    pub fn next_pc(&mut self) -> usize {
-        (self.PC + Wrapping(1)).0 as usize
+    pub fn next_pc(&self) -> usize {
+        (Wrapping::<u16>(self.get_pc()) + Wrapping::<u16>(1)).0 as usize
     }
 
     #[allow(dead_code)]
     pub fn nmi(&mut self, memory: &mut MEM) {
         let vector = memory.read(0xFFFA, 2);
-        self.PC = Wrapping(vector as u16);
+        self.store_pc(vector as u16);
     }
     
     #[allow(dead_code)]
     pub fn reset(&mut self, memory: &mut MEM) {
         let vector = memory.read(0xFFFC, 2);
-        self.PC = Wrapping(vector as u16);
+        self.store_pc(vector as u16);
     }
     
     #[allow(dead_code)]
     pub fn irq_brk(&mut self, memory: &mut MEM) {
         let vector = memory.read(0xFFFE, 2);
-        self.PC = Wrapping(vector as u16);
+        self.B = true;
+        self.store_pc(vector as u16);
+    }
+
+    fn get_instr(&self, memory: &mut MEM) -> u8 {
+        let instruction = memory.read(self.PC.0 as usize, 1) as u8;
+        return instruction;
+    }
+
+    fn get_instr_and_operand(&self, memory: &mut MEM) -> (u8, u8) {
+        let instruction = self.get_instr(memory);
+        let operand1 = memory.read(self.PC.0 as usize + 1, 1) as u8;
+        return (instruction, operand1);
+    }
+
+    fn get_instr_and_operands(&self, memory: &mut MEM) -> (u8, u8, u8) {
+        let (instruction, operand1) = self.get_instr_and_operand(memory);
+        let operand2 = memory.read(self.PC.0 as usize + 2, 1) as u8;
+        return (instruction, operand1, operand2);
+    }
+
+    pub fn get_pc(&self) -> u16 {self.PC.0}
+    pub fn get_a(&self) -> u8 {self.A.0}
+    pub fn get_x(&self) -> u8 {self.X.0}
+    pub fn get_y(&self) -> u8 {self.Y.0}
+    pub fn get_s(&self) -> u8 {self.S.0}
+    fn store_pc_wrapping(&mut self, value: Wrapping<u16>) {self.PC = value}
+    pub fn store_pc(&mut self, value: u16) {self.store_pc_wrapping(Wrapping(value))}
+    pub fn increment_pc(&mut self, value: u16) {let current = self.get_pc(); self.store_pc_wrapping(Wrapping::<u16>(current) + Wrapping::<u16>(value))}
+    pub fn offset_pc(&mut self, value: i8) {let current = self.get_pc(); self.store_pc_wrapping(Wrapping::<u16>(current) + Wrapping::<u16>(value as u16))}
+    pub fn store_a(&mut self, value: u8) {self.A = Wrapping(value)}
+    pub fn store_x(&mut self, value: u8) {self.X = Wrapping(value)}
+    pub fn store_y(&mut self, value: u8) {self.Y = Wrapping(value)}
+    pub fn increment_s(&mut self) {self.S += 1}
+    pub fn decrement_s(&mut self) {self.S -= 1}
+}
+
+#[cfg(test)]
+mod test_offset {
+    use super::*;
+
+    use proptest::prelude::*;
+    proptest! {
+        #[test]
+        fn test_offset(original_address in 0x0000..=0xFFFFu16, offset in -0x80..=0x7Fi8) {
+            let mut test_cpu = CPU::new();
+
+            test_cpu.store_pc(original_address);
+
+            assert_eq!(test_cpu.get_pc(), original_address);
+            test_cpu.offset_pc(offset);
+            assert_eq!(test_cpu.get_pc(), (Wrapping(original_address) + Wrapping(offset as u16)).0);
+        }
+
+        #[test]
+        fn test_increment(original_address in 0x0000..=0xFFFFu16, increment in 0x0000..=0xFFFFu16) {
+            let mut test_cpu = CPU::new();
+
+            test_cpu.store_pc(original_address);
+
+            assert_eq!(test_cpu.get_pc(), original_address);
+            test_cpu.increment_pc(increment);
+            assert_eq!(test_cpu.get_pc(), (Wrapping(original_address) + Wrapping(increment as u16)).0);
+        }
     }
 }
