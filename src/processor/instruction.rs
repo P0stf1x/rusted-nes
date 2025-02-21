@@ -57,14 +57,16 @@ impl Instruction {
 
     pub fn get_zpgx(cpu: &CPU, memory: &mut MEM) -> Self {
         let (instruction, memory_address) = cpu.get_instr_and_operand(memory);
-        let value = memory.read((Wrapping::<u8>(memory_address) + Wrapping::<u8>(cpu.get_x())).0 as usize, 1) as u8;
-        return Self { mode: ZeroPageX, instruction, operand1: Some(memory_address), operand2: None, value: Some(value), memory_address: Some(memory_address as u16), memory_indirect_address: None }
+        let offsetted_memory_address = (Wrapping::<u8>(memory_address) + Wrapping::<u8>(cpu.get_x())).0;
+        let value = memory.read(offsetted_memory_address as usize, 1) as u8;
+        return Self { mode: ZeroPageX, instruction, operand1: Some(memory_address), operand2: None, value: Some(value), memory_address: Some(offsetted_memory_address as u16), memory_indirect_address: None }
     }
 
     pub fn get_zpgy(cpu: &CPU, memory: &mut MEM) -> Self {
         let (instruction, memory_address) = cpu.get_instr_and_operand(memory);
-        let value = memory.read((Wrapping::<u8>(memory_address) + Wrapping::<u8>(cpu.get_y())).0 as usize, 1) as u8;
-        return Self { mode: ZeroPageY, instruction, operand1: Some(memory_address), operand2: None, value: Some(value), memory_address: Some(memory_address as u16), memory_indirect_address: None }
+        let offsetted_memory_address = (Wrapping::<u8>(memory_address) + Wrapping::<u8>(cpu.get_y())).0;
+        let value = memory.read(offsetted_memory_address as usize, 1) as u8;
+        return Self { mode: ZeroPageY, instruction, operand1: Some(memory_address), operand2: None, value: Some(value), memory_address: Some(offsetted_memory_address as u16), memory_indirect_address: None }
     }
 
     pub fn get_rel(cpu: &CPU, memory: &mut MEM) -> Self {
@@ -83,15 +85,17 @@ impl Instruction {
     pub fn get_absx(cpu: &CPU, memory: &mut MEM) -> Self {
         let (instruction, operand1, operand2) = cpu.get_instr_and_operands(memory);
         let memory_address = combine_operands(operand1, operand2);
-        let value = memory.read((Wrapping::<u16>(memory_address) + Wrapping::<u16>(cpu.get_x() as u16)).0 as usize, 1) as u8;
-        return Self { mode: AbsoluteX, instruction, operand1: Some(operand1), operand2: Some(operand2), value: Some(value), memory_address: Some(memory_address), memory_indirect_address: None }
+        let offsetted_memory_address = (Wrapping::<u16>(memory_address) + Wrapping::<u16>(cpu.get_x() as u16)).0;
+        let value = memory.read(offsetted_memory_address as usize, 1) as u8;
+        return Self { mode: AbsoluteX, instruction, operand1: Some(operand1), operand2: Some(operand2), value: Some(value), memory_address: Some(offsetted_memory_address), memory_indirect_address: None }
     }
 
     pub fn get_absy(cpu: &CPU, memory: &mut MEM) -> Self {
         let (instruction, operand1, operand2) = cpu.get_instr_and_operands(memory);
         let memory_address = combine_operands(operand1, operand2);
-        let value = memory.read((Wrapping::<u16>(memory_address) + Wrapping::<u16>(cpu.get_y() as u16)).0 as usize, 1) as u8;
-        return Self { mode: AbsoluteY, instruction, operand1: Some(operand1), operand2: Some(operand2), value: Some(value), memory_address: Some(memory_address), memory_indirect_address: None }
+        let offsetted_memory_address = (Wrapping::<u16>(memory_address) + Wrapping::<u16>(cpu.get_y() as u16)).0;
+        let value = memory.read(offsetted_memory_address as usize, 1) as u8;
+        return Self { mode: AbsoluteY, instruction, operand1: Some(operand1), operand2: Some(operand2), value: Some(value), memory_address: Some(offsetted_memory_address), memory_indirect_address: None }
     }
 
     pub fn get_indirect(cpu: &CPU, memory: &mut MEM) -> Self {
@@ -110,7 +114,8 @@ impl Instruction {
     pub fn get_indirect_y(cpu: &CPU, memory: &mut MEM) -> Self {
         let (instruction, memory_indirect_address) = cpu.get_instr_and_operand(memory);
         let memory_address = memory.read(memory_indirect_address as usize, 2) as u16;
-        let value = memory.read((Wrapping::<u16>(memory_address) + Wrapping::<u16>(cpu.get_y() as u16)).0 as usize, 1) as u8;
-        return Self { mode: IndirectY, instruction, operand1: Some(memory_indirect_address), operand2: None, value: Some(value), memory_address: Some(memory_address), memory_indirect_address: Some(memory_indirect_address) }
+        let offsetted_memory_address = (Wrapping::<u16>(memory_address) + Wrapping::<u16>(cpu.get_y() as u16)).0;
+        let value = memory.read(offsetted_memory_address as usize, 1) as u8;
+        return Self { mode: IndirectY, instruction, operand1: Some(memory_indirect_address), operand2: None, value: Some(value), memory_address: Some(offsetted_memory_address), memory_indirect_address: Some(memory_indirect_address) }
     }
 }
