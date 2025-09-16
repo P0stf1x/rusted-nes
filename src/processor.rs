@@ -47,6 +47,7 @@ pub struct CPU {
 }
 
 #[derive(Debug)]
+#[derive(PartialEq, Eq)]
 pub enum MemoryMode {
     Implicit,
     Acc,
@@ -393,6 +394,7 @@ impl CPU {
     pub fn store_a(&mut self, value: u8) {self.A = Wrapping(value)}
     pub fn store_x(&mut self, value: u8) {self.X = Wrapping(value)}
     pub fn store_y(&mut self, value: u8) {self.Y = Wrapping(value)}
+    pub fn store_s(&mut self, value: u8) {self.S = Wrapping(value)}
     pub fn increment_s(&mut self) {self.S += 1}
     pub fn decrement_s(&mut self) {self.S -= 1}
 }
@@ -424,5 +426,68 @@ mod test_offset {
             test_cpu.increment_pc(increment);
             assert_eq!(test_cpu.get_pc(), (Wrapping(original_address) + Wrapping(increment as u16)).0);
         }
+    }
+}
+
+#[cfg(test)]
+mod test_stack {
+    use crate::memory::MEMORY_SIZE;
+
+    use super::*;
+
+    use proptest::prelude::*;
+    proptest! {
+        #[test]
+        fn test_push(value in 0x00u8..=0xFF) {
+            let mut test_cpu = CPU::new();
+            let mut memory = MEM::new(MEMORY_SIZE);
+
+            test_cpu.push_stack(value, &mut memory);
+
+            prop_assert_eq!(memory.read(0x0100, 1) as u8, value);
+        }
+
+        #[test]
+        fn test_pull(value in 0x00u8..=0xFF) {
+            let mut test_cpu = CPU::new();
+            let mut memory = MEM::new(MEMORY_SIZE);
+
+            test_cpu.push_stack(value, &mut memory);
+
+            prop_assert_eq!(test_cpu.pull_stack(&mut memory), value);
+        }
+    }
+
+    #[test]
+    fn test_fill() {
+        let mut test_cpu = CPU::new();
+        let mut memory = MEM::new(MEMORY_SIZE);
+
+        for value in 0..=255 {
+            test_cpu.push_stack(value, &mut memory);
+        }
+        
+        for value in (0..=255).rev() {
+            assert_eq!(test_cpu.pull_stack(&mut memory), value);
+        }
+    }
+
+    #[test]
+    fn test_overflow_underflow() {
+        let mut test_cpu = CPU::new();
+        let mut memory = MEM::new(MEMORY_SIZE);
+
+        for value in 0..=255 {
+            test_cpu.push_stack(value, &mut memory);
+        }
+
+        test_cpu.push_stack(69, &mut memory); // overflow
+        assert_eq!(test_cpu.pull_stack(&mut memory), 69, "Wrong number on overflow");
+
+        for value in (1..=255).rev() {
+            assert_eq!(test_cpu.pull_stack(&mut memory), value);
+        }
+
+        assert_eq!(test_cpu.pull_stack(&mut memory), 69, "Wrong number on underflow");
     }
 }

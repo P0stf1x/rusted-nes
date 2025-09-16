@@ -28,7 +28,7 @@ impl Instruction {
             Absolute => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name} ${:04X} = {:02X}", self.memory_address.unwrap(), self.value.unwrap())),
             AbsoluteX => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name} ${:04X},X @ {:04X} = {:02X}", self.memory_address.unwrap(), (Wrapping::<u16>(self.memory_address.unwrap()) + Wrapping::<u16>(cpu.get_x() as u16)).0, self.value.unwrap())),
             AbsoluteY => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name} ${:04X},Y @ {:04X} = {:02X}", self.memory_address.unwrap(), (Wrapping::<u16>(self.memory_address.unwrap()) + Wrapping::<u16>(cpu.get_y() as u16)).0, self.value.unwrap())),
-            Indirect => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name} (${:04X}) = {:04X}", self.memory_indirect_address.unwrap(), self.memory_address.unwrap())),
+            Indirect => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name} (${:04X}) = {:04X}", combine_operands(self.operand1.unwrap(), self.operand2.unwrap()), self.memory_address.unwrap())),
             IndirectX => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name} (${:02X},X) @ {:02X} = {:04X} = {:02X}", self.memory_indirect_address.unwrap(), (Wrapping::<u8>(self.memory_indirect_address.unwrap()) + Wrapping::<u8>(cpu.get_x())).0, self.memory_address.unwrap(), self.value.unwrap())),
             IndirectY => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name} (${:02X}),Y = {:04X} @ {:04X} = {:02X}", self.memory_indirect_address.unwrap(), self.memory_address.unwrap(), (Wrapping::<u16>(self.memory_address.unwrap()) + Wrapping::<u16>(cpu.get_y() as u16)).0, self.value.unwrap())),
         }
@@ -99,9 +99,20 @@ impl Instruction {
     }
 
     pub fn get_indirect(cpu: &CPU, memory: &mut MEM) -> Self {
-        let (instruction, memory_indirect_address) = cpu.get_instr_and_operand(memory);
-        let memory_address = memory.read((memory_indirect_address) as usize, 2) as u16;
-        return Self { mode: Indirect, instruction, operand1: Some(memory_indirect_address), operand2: None, value: None, memory_address: Some(memory_address), memory_indirect_address: Some(memory_indirect_address) }
+        // indirect is only used by JMP and there's a bug in it
+        let (instruction, operand1, operand2) = cpu.get_instr_and_operands(memory);
+        let memory_indirect_address = combine_operands(operand1, operand2);
+        // let memory_address = memory.read((memory_indirect_address) as usize, 2) as u16;
+        let memory_address = match operand1 {
+            0x00..=0xFE => {
+                memory.read(memory_indirect_address as usize, 2) as u16
+            },
+            0xFF => {
+                (memory.read(memory_indirect_address as usize, 1) +
+                (memory.read((memory_indirect_address - 0xFF) as usize, 1) << 8)) as u16
+            },
+        };
+        return Self { mode: Indirect, instruction, operand1: Some(operand1), operand2: Some(operand2), value: None, memory_address: Some(memory_address), memory_indirect_address: None }
     }
 
     pub fn get_indirect_x(cpu: &CPU, memory: &mut MEM) -> Self {
