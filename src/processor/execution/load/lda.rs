@@ -1,4 +1,3 @@
-use crate::logging::Logger;
 use crate::processor::instruction::Instruction;
 use crate::processor::*;
 use crate::memory::MEM;

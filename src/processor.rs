@@ -41,6 +41,7 @@ pub struct CPU {
     C: bool,
     
     #[new(default)]
+    #[allow(dead_code)] // for future use
     settings: Settings,
     #[new(default)]
     executed_opcodes: u32,
@@ -394,6 +395,7 @@ impl CPU {
     pub fn store_a(&mut self, value: u8) {self.A = Wrapping(value)}
     pub fn store_x(&mut self, value: u8) {self.X = Wrapping(value)}
     pub fn store_y(&mut self, value: u8) {self.Y = Wrapping(value)}
+    #[allow(dead_code)] // used only in tests
     pub fn store_s(&mut self, value: u8) {self.S = Wrapping(value)}
     pub fn increment_s(&mut self) {self.S += 1}
     pub fn decrement_s(&mut self) {self.S -= 1}

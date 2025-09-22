@@ -1,3 +1,5 @@
+#![allow(dead_code)] // FIXME
+
 #[derive(Debug)]
 pub struct Settings {
     pub clock_delta: f64, // clock delta in nanosecs

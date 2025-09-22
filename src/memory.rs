@@ -1,7 +1,5 @@
 #![allow(dead_code)]
 
-use std::fs::File;
-
 pub mod ines;
 pub mod mappers;
 mod combinatorics;
@@ -149,11 +147,19 @@ impl MEM {
         return val;
     }
 
+    pub fn read_no_hook(&mut self, address: usize, size: usize) -> usize {
+        self.read(address, size)
+    }
+
     pub fn write(&mut self, address: usize, data: u8) {
         if !self.is_protected(address) { // or should it check mirrored address?
             let mirrored_address = self.get_mirrored_address(address);
             self.data[mirrored_address] = data;
         }
+    }
+
+    pub fn write_no_hook(&mut self, address: usize, data: u8) {
+        self.write(address, data)
     }
 
     pub fn write_bulk(&mut self, address: usize, data: Vec<u8>) {
