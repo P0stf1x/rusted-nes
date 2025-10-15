@@ -55,12 +55,12 @@ impl CPU {
                     STY(memory_mode) => {Ok(self.execute_sty(memory_mode, memory))},
                     
                     // TRANSFERS
-                    TAX(_memory_mode) => {Ok(self.execute_tax())},
-                    TAY(_memory_mode) => {Ok(self.execute_tay())},
-                    TXA(_memory_mode) => {Ok(self.execute_txa())},
-                    TYA(_memory_mode) => {Ok(self.execute_tya())},
-                    TSX(_memory_mode) => {Ok(self.execute_tsx())},
-                    TXS(_memory_mode) => {Ok(self.execute_txs())},
+                    TAX(_memory_mode) => {Ok(self.execute_tax(memory))},
+                    TAY(_memory_mode) => {Ok(self.execute_tay(memory))},
+                    TXA(_memory_mode) => {Ok(self.execute_txa(memory))},
+                    TYA(_memory_mode) => {Ok(self.execute_tya(memory))},
+                    TSX(_memory_mode) => {Ok(self.execute_tsx(memory))},
+                    TXS(_memory_mode) => {Ok(self.execute_txs(memory))},
                     
                     // STACK
                     PHA(memory_mode) => {Ok(self.execute_pha(memory_mode, memory))},
