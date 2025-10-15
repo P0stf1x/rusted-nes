@@ -7,6 +7,7 @@ use crate::memory::*;
 
 mod processor;
 mod memory;
+mod logging;
 
 fn main() {
     let mut is_raw_image = false;
