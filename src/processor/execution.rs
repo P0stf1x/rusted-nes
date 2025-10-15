@@ -111,17 +111,51 @@ impl CPU {
                     BVC(_memory_mode) => {Ok(self.execute_bvc(memory))},
 
                     // STATUS
-                    SEC(_memory_mode) => {self.C = true;  Ok(self.PC += 1)},
-                    CLC(_memory_mode) => {self.C = false; Ok(self.PC += 1)},
-                    SEI(_memory_mode) => {self.I = true;  Ok(self.PC += 1)},
-                    CLI(_memory_mode) => {self.I = false; Ok(self.PC += 1)},
-                    SED(_memory_mode) => {self.D = true;  Ok(self.PC += 1)},
-                    CLD(_memory_mode) => {self.D = false; Ok(self.PC += 1)},
-                    CLV(_memory_mode) => {self.V = false; Ok(self.PC += 1)},
+                    SEC(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("SEC"));
+                        self.C = true;
+                        Ok(self.PC += 1)
+                    },
+                    CLC(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("CLC"));
+                        self.C = false;
+                        Ok(self.PC += 1)
+                    },
+                    SEI(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("SEI"));
+                        self.I = true;
+                        Ok(self.PC += 1)
+                    },
+                    CLI(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("CLI"));
+                        self.I = false;
+                        Ok(self.PC += 1)
+                    },
+                    SED(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("SED"));
+                        self.D = true;
+                        Ok(self.PC += 1)
+                    },
+                    CLD(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("CLD"));
+                        self.D = false;
+                        Ok(self.PC += 1)
+                    },
+                    CLV(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("CLV"));
+                        self.V = false;
+                        Ok(self.PC += 1)
+                    },
                     
                     // SYSTEM
-                    BRK(_memory_mode) => Err(()),
-                    NOP(_memory_mode) => Ok(self.PC += 1),
+                    BRK(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("BRK"));
+                        Ok(self.irq_brk(memory))
+                    },
+                    NOP(_memory_mode) => Ok({
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("NOP"));
+                        self.increment_pc(1);
+                    }),
                     RTI(_memory_mode) => Ok({
                         let status = self.pull_stack(memory);
                         self.load_status(status);
