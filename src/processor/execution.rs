@@ -1,5 +1,8 @@
 use crate::processor::*;
 use crate::memory::MEM;
+#[allow(unused_imports)] // It is used...
+use crate::logging::Logger;
+
 use std::time::Duration;
 use std::thread;
 
