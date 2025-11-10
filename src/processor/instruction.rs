@@ -117,7 +117,9 @@ impl Instruction {
 
     pub fn get_indirect_x(cpu: &CPU, memory: &mut MEM) -> Self {
         let (instruction, memory_indirect_address) = cpu.get_instr_and_operand(memory);
-        let memory_address = memory.read((Wrapping::<u8>(memory_indirect_address) + Wrapping::<u8>(cpu.get_x())).0 as usize, 2) as u16;
+        let memory_low_byte_address = memory.read((Wrapping::<u8>(memory_indirect_address) + Wrapping::<u8>(cpu.get_x())).0 as usize, 1) as u16;
+        let memory_high_byte_address = memory.read((Wrapping::<u8>(memory_indirect_address) + Wrapping::<u8>(cpu.get_x()) + Wrapping::<u8>(1)).0 as usize, 1) as u16;
+        let memory_address = (memory_high_byte_address << 8) + memory_low_byte_address;
         let value = memory.read(memory_address as usize, 1) as u8;
         return Self { mode: IndirectX, instruction, operand1: Some(memory_indirect_address), operand2: None, value: Some(value), memory_address: Some(memory_address), memory_indirect_address: Some(memory_indirect_address) }
     }
