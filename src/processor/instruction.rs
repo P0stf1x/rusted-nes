@@ -41,7 +41,8 @@ impl Instruction {
 
     pub fn get_acc(cpu: &CPU, memory: &mut MEM) -> Self {
         let instruction = cpu.get_instr(memory);
-        return Self { mode: Acc, instruction, operand1: None, operand2: None, value: None, memory_address: None, memory_indirect_address: None }
+        let value = cpu.get_a();
+        return Self { mode: Acc, instruction, operand1: None, operand2: None, value: Some(value), memory_address: None, memory_indirect_address: None }
     }
 
     pub fn get_imm(cpu: &CPU, memory: &mut MEM) -> Self {
