@@ -38,9 +38,9 @@ impl PPU {
 
     #[allow(unused)]
     fn read_memory(&self, address: usize) -> u8 {
-        return unsafe{(*self.memory_pointer.0).data[address]};
+        return unsafe{(&mut *self.memory_pointer.0).data[address]};
     }
     fn write_memory(&self, address: usize, value: u8) {
-        unsafe{(*self.memory_pointer.0).data[address] = value};
+        unsafe{(&mut *self.memory_pointer.0).data[address] = value};
     }
 }

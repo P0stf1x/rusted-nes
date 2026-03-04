@@ -86,10 +86,10 @@ impl PPU {
     }
 
     fn set_vblank(&self) {
-        unsafe{(*self.memory_pointer.0).data[0x2002] |= 0b_1000_0000};
+        unsafe{(&mut *self.memory_pointer.0).data[0x2002] |= 0b_1000_0000};
     }
 
     fn clear_vblank(&self) {
-        unsafe{(*self.memory_pointer.0).data[0x2002] &= 0b_0111_1111};
+        unsafe{(&mut *self.memory_pointer.0).data[0x2002] &= 0b_0111_1111};
     }
 }
