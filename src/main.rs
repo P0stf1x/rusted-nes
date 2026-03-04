@@ -40,7 +40,7 @@ fn main() {
     cpu.S = Wrapping(0xFDu8);
     cpu.I = true;
     memory.data[0x2002] = 0b_1000_0000; // FIXME: hack to make cpu think it's always in vblank
-    
+
     use std::io::Write;
     use std::fs;
     let file = fs::OpenOptions::new()
@@ -53,9 +53,9 @@ fn main() {
         Ok(mut f) => f.write_all(&memory.data),
         Err(_) => Ok(println!("No file")),
     };
-    
+
     loop {
-        if cpu.execute(&mut memory).is_err() {
+        if cpu.tick(&mut memory).is_err() {
             // TODO: use logger instead
             println!("");
             println!("-----------------------------");

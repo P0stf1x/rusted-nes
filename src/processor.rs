@@ -24,7 +24,7 @@ pub struct CPU {
     Y: Wrapping<u8>,    // Register Y
     #[new(default)]
     pub S: Wrapping<u8>,    // Stack Pointer
-    
+
     #[new(default)]
     N: bool,
     #[new(default)]
@@ -39,12 +39,27 @@ pub struct CPU {
     Z: bool,
     #[new(default)]
     C: bool,
-    
+
     #[new(default)]
     #[allow(dead_code)] // for future use
     settings: Settings,
     #[new(default)]
-    executed_opcodes: u32,
+    cycle_count: f64,
+    #[new(default)]
+    cpu_state: CpuState,
+}
+
+#[derive(Debug)]
+#[derive(PartialEq, Eq)]
+pub enum CpuState {
+    Waiting(u8),
+    Ready,
+}
+
+impl Default for CpuState {
+    fn default() -> Self {
+        return CpuState::Ready;
+    }
 }
 
 #[derive(Debug)]
@@ -352,13 +367,13 @@ impl CPU {
         let vector = memory.read(0xFFFA, 2);
         self.store_pc(vector as u16);
     }
-    
+
     #[allow(dead_code)]
     pub fn reset(&mut self, memory: &mut MEM) {
         let vector = memory.read(0xFFFC, 2);
         self.store_pc(vector as u16);
     }
-    
+
     #[allow(dead_code)]
     pub fn irq_brk(&mut self, memory: &mut MEM) {
         let vector = memory.read(0xFFFE, 2);
@@ -468,7 +483,7 @@ mod test_stack {
         for value in 0..=255 {
             test_cpu.push_stack(value, &mut memory);
         }
-        
+
         for value in (0..=255).rev() {
             assert_eq!(test_cpu.pull_stack(&mut memory), value);
         }

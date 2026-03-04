@@ -34,6 +34,134 @@ impl Instruction {
         }
     }
 
+    pub fn count_cycles(&self) -> u64 {
+        let mut cycle_count: u64 = match self.mode {
+            Implicit  => 2,
+            Acc       => 2,
+            Immediate => 2,
+            ZeroPage  => 3,
+            ZeroPageX => 4,
+            ZeroPageY => 4,
+            Relative  => 2, // Only in branch instructions // FIXME: +1 if branch taken // FIXME: +1 on page cross
+            Absolute  => 4,
+            AbsoluteX => 4, // FIXME: +1 on page cross
+            AbsoluteY => 4, // FIXME: +1 on page cross
+            Indirect  => 5,
+            IndirectX => 6,
+            IndirectY => 5, // FIXME: +1 on page cross
+        };
+        cycle_count += Self::is_rmw(self.instruction);
+        return cycle_count;
+    }
+
+    fn is_rmw(instruction: u8) -> u64 { // read/modify/write instruction
+        match instruction {
+            // ASL
+            0x06 => 2, 0x16 => 2, 0x0E => 2, 0x1E => 2,
+            // LSR
+            0x46 => 2, 0x56 => 2, 0x4E => 2, 0x5E => 2,
+            // ROL
+            0x26 => 2, 0x36 => 2, 0x2E => 2, 0x3E => 2,
+            // ROR
+            0x66 => 2, 0x76 => 2, 0x6E => 2, 0x7E => 2,
+            // INC
+            0xE6 => 2, 0xF6 => 2, 0xEE => 2, 0xFE => 2,
+            // DEC
+            0xC6 => 2, 0xD6 => 2, 0xCE => 2, 0xDE => 2,
+            // Else
+            _ => 0,
+        }
+    }
+
+    pub fn get(cpu: &CPU, memory: &mut MEM) -> Self {
+        let instruction = cpu.get_instr(memory);
+        match instruction { // Non non standard instructions
+            0x00 => return Self::get_imp(cpu, memory),
+            0x20 => return Self::get_abs(cpu, memory),
+            0x40 => return Self::get_imp(cpu, memory),
+            0x60 => return Self::get_imp(cpu, memory),
+
+            0x08 => return Self::get_imp(cpu, memory),
+            0x28 => return Self::get_imp(cpu, memory),
+            0x48 => return Self::get_imp(cpu, memory),
+            0x68 => return Self::get_imp(cpu, memory),
+            0x88 => return Self::get_imp(cpu, memory),
+            0xA8 => return Self::get_imp(cpu, memory),
+            0xC8 => return Self::get_imp(cpu, memory),
+            0xE8 => return Self::get_imp(cpu, memory),
+
+            0x18 => return Self::get_imp(cpu, memory),
+            0x38 => return Self::get_imp(cpu, memory),
+            0x58 => return Self::get_imp(cpu, memory),
+            0x78 => return Self::get_imp(cpu, memory),
+            0x98 => return Self::get_imp(cpu, memory),
+            0xB8 => return Self::get_imp(cpu, memory),
+            0xD8 => return Self::get_imp(cpu, memory),
+            0xF8 => return Self::get_imp(cpu, memory),
+
+            0x8A => return Self::get_imp(cpu, memory),
+            0x9A => return Self::get_imp(cpu, memory),
+            0xAA => return Self::get_imp(cpu, memory),
+            0xBA => return Self::get_imp(cpu, memory),
+            0xCA => return Self::get_imp(cpu, memory),
+            0xEA => return Self::get_imp(cpu, memory),
+            _ => ()
+        };
+        match instruction & 0b_0000_0011 {
+            0b01 => {
+                match (instruction >> 2) & 0b_0000_0111 {
+                    0b000 => Self::get_indirect_x(cpu, memory),
+                    0b001 => Self::get_zpg(cpu, memory),
+                    0b010 => Self::get_imm(cpu, memory),
+                    0b011 => Self::get_abs(cpu, memory),
+                    0b100 => Self::get_indirect_y(cpu, memory),
+                    0b101 => Self::get_zpgx(cpu, memory),
+                    0b110 => Self::get_absx(cpu, memory),
+                    0b111 => Self::get_absy(cpu, memory),
+                    _ => panic!("index out of bounds"),
+                }
+            },
+            0b10 => {
+                match instruction { // Non standard instructions
+                    0x96 => return Self::get_zpgy(cpu, memory),
+                    0xB6 => return Self::get_zpgy(cpu, memory),
+                    0xBE => return Self::get_absy(cpu, memory),
+                    _ => ()
+                };
+                match (instruction >> 2) & 0b_0000_0111 {
+                    0b000 => Self::get_imm(cpu, memory),
+                    0b001 => Self::get_zpg(cpu, memory),
+                    0b010 => Self::get_acc(cpu, memory),
+                    0b011 => Self::get_abs(cpu, memory),
+                    0b100 => panic!(),
+                    0b101 => Self::get_zpgx(cpu, memory),
+                    0b110 => panic!(),
+                    0b111 => Self::get_absx(cpu, memory),
+                    _ => panic!("index out of bounds"),
+                }
+            }
+            0b00 => {
+                match instruction { // Non standard instructions
+                    0x6C => return Self::get_indirect(cpu, memory),
+                    _ => ()
+                };
+                match (instruction >> 2) & 0b_0000_0111 {
+                    0b000 => Self::get_imm(cpu, memory),
+                    0b001 => Self::get_zpg(cpu, memory),
+                    0b010 => panic!(),
+                    0b011 => Self::get_abs(cpu, memory),
+                    0b100 => Self::get_rel(cpu, memory), // all the branch instructions
+                    0b101 => Self::get_zpgx(cpu, memory),
+                    0b110 => panic!(),
+                    0b111 => Self::get_absx(cpu, memory),
+                    _ => panic!("index out of bounds"),
+                }
+            }
+            0b11 => panic!("Instructions Group 4 unsupported"),
+            _ => panic!("index out of bounds"),
+        }
+    }
+
     pub fn get_imp(cpu: &CPU, memory: &mut MEM) -> Self {
         let instruction = cpu.get_instr(memory);
         return Self { mode: Implicit, instruction, operand1: None, operand2: None, value: None, memory_address: None, memory_indirect_address: None }
