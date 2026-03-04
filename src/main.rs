@@ -9,6 +9,7 @@ use crate::pixel_processor::*;
 
 mod processor;
 mod memory;
+mod logging;
 mod pixel_processor;
 
 fn main() {
@@ -39,12 +40,12 @@ fn main() {
     // TODO: move to cpu init
     match entry_point {
         None => cpu.reset(&mut memory),
-        Some(address) => cpu.PC = Wrapping(address as u16)
+        Some(address) => cpu.store_pc(address as u16),
     }
     cpu.S = Wrapping(0xFDu8);
     cpu.I = true;
     // memory.data[0x2002] = 0b_1000_0000; // FIXME: hack to make cpu think it's always in vblank
-    
+
     use std::io::Write;
     use std::fs;
     let file = fs::OpenOptions::new()
@@ -67,15 +68,15 @@ fn main() {
     memory.push_hook(MemoryOperation::Write, MemoryRegion::new(0x2000, 0x0008), ppu_tx);
 
     let thread_handle = thread::spawn(move || { // macOS doesn't like it when window is created not from main thread so we put cpu on the other thread 🤷🏻‍♂️
-        while cpu.execute(&mut memory).is_ok() { // emulator loop
+        if cpu.tick(&mut memory).is_err() { // emulator loop
+            // TODO: use logger instead
+            println!("");
+            println!("-----------------------------");
+            println!("WE CRASHED");
+            println!("{:#04X?}", cpu);
+            println!("{:#04X}", memory.read(cpu.PC.0 as usize, 1));
+            println!("-----------------------------");
         }
-        // TODO: use logger instead
-        println!("");
-        println!("-----------------------------");
-        println!("WE CRASHED");
-        println!("{:#04X?}", cpu);
-        println!("{:#04X}", memory.read(cpu.PC.0 as usize, 1));
-        println!("-----------------------------");
     });
 
     ppu.run();

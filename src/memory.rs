@@ -4,6 +4,9 @@ use ppu_memory::PPU_MEM;
 
 pub mod ines;
 pub mod mappers;
+mod combinatorics;
+
+pub use combinatorics::combine_operands;
 pub mod ppu_memory;
 
 mod hooks;
@@ -49,7 +52,7 @@ mod memory_region_test {
     fn test_intersection(addr1: usize, addr2: usize, size1: usize, size2: usize, expected_result: bool) {
         let a: MemoryRegion = MemoryRegion { region_address: addr1, region_size: size1 };
         let b: MemoryRegion = MemoryRegion { region_address: addr2, region_size: size2 };
-        
+
         assert_eq!(a.intersects_region(&b), expected_result);
     }
 
@@ -163,6 +166,10 @@ impl MEM {
         return result;
     }
 
+    pub fn read_no_hook(&mut self, address: usize, size: usize) -> usize {
+        self.read(address, size)
+    }
+
     pub fn write(&mut self, address: usize, data: u8) {
         for hook in self.get_hooks(MemoryOperation::Write, address) {
             hook.send(address, data);
@@ -171,6 +178,10 @@ impl MEM {
             let mirrored_address = self.get_mirrored_address(address);
             self.data[mirrored_address] = data;
         }
+    }
+
+    pub fn write_no_hook(&mut self, address: usize, data: u8) {
+        self.write(address, data)
     }
 
     pub fn write_bulk(&mut self, address: usize, data: Vec<u8>) {
@@ -217,9 +228,9 @@ mod read_write_test {
         let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
 
         assert_eq!(test_memory.read(0x0000, 1), 0x00, "Couldn't prepare memory for test");
-        
+
         test_memory.write(0x0000, 0xff);
-        
+
         assert_eq!(test_memory.read(0x0000, 1), 0xff);
     }
 
@@ -228,9 +239,9 @@ mod read_write_test {
         let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
 
         assert_eq!(test_memory.read(0x0000, 2), 0x0000, "Couldn't prepare memory for test");
-        
+
         test_memory.write_bulk(0x0000, vec![0xff, 0xff]);
-        
+
         assert_eq!(test_memory.read(0x0000, 2), 0xffff);
     }
 }
@@ -338,7 +349,7 @@ mod mirroring_tests {
         assert_eq!(test_memory.data[0x0001], 0xAB);
         assert_eq!(test_memory.read(0x0001, 1), 0xAB);
     }
-    
+
     #[test]
     fn test_memory_mirroring() {
         let mut test_memory: MEM = MEM::new(MEMORY_SIZE);

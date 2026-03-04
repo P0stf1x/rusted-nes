@@ -1,5 +1,9 @@
+use crate::processor::instruction::Instruction;
 use crate::processor::*;
 use crate::memory::MEM;
+#[allow(unused_imports)] // It is used...
+use crate::logging::Logger;
+
 use std::time::Duration;
 use std::thread;
 
@@ -28,14 +32,36 @@ impl CPU {
         return ((most_significant_byte as u16) << 8) + least_significant_byte as u16;
     }
 
+    pub fn tick(&mut self, memory: &mut MEM) -> Result<(), ()> {
+        self.cycle_count += 1.;
+        if self.cycle_count >= 29780.5 {
+            self.cycle_count -= 29780.5;
+            self.sleep(29780);
+        };
+        match self.cpu_state {
+            CpuState::Ready => {
+                let wait_time = Instruction::get(&self, memory).count_cycles();
+                self.cpu_state = CpuState::Waiting(wait_time as u8);
+                self.execute(memory)
+            },
+            CpuState::Waiting(cycles_left) => {
+                if cycles_left > 1 {
+                    self.cpu_state = CpuState::Waiting(cycles_left - 1);
+                } else {
+                    self.cpu_state = CpuState::Ready;
+                };
+                Ok(())
+            },
+        }
+    }
+
     pub fn execute(&mut self, memory: &mut MEM) -> Result<(), ()> {
         let pc_data = memory.read(self.PC.0 as usize, 1) as u8;
-        self.executed_opcodes += 1;
         let operation = self.from(pc_data);
         use Opcodes::*;
         match operation {
             Err(_) => panic!("Unexpected instruction {pc_data:#04X} at {:#06X}", self.PC.0),
-            
+
             Ok(operation) => {
                 let status = self.store_status();
 
@@ -53,21 +79,21 @@ impl CPU {
                     STA(memory_mode) => {Ok(self.execute_sta(memory_mode, memory))},
                     STX(memory_mode) => {Ok(self.execute_stx(memory_mode, memory))},
                     STY(memory_mode) => {Ok(self.execute_sty(memory_mode, memory))},
-                    
+
                     // TRANSFERS
-                    TAX(_memory_mode) => {Ok(self.execute_tax())},
-                    TAY(_memory_mode) => {Ok(self.execute_tay())},
-                    TXA(_memory_mode) => {Ok(self.execute_txa())},
-                    TYA(_memory_mode) => {Ok(self.execute_tya())},
-                    TSX(_memory_mode) => {Ok(self.execute_tsx())},
-                    TXS(_memory_mode) => {Ok(self.execute_txs())},
-                    
+                    TAX(_memory_mode) => {Ok(self.execute_tax(memory))},
+                    TAY(_memory_mode) => {Ok(self.execute_tay(memory))},
+                    TXA(_memory_mode) => {Ok(self.execute_txa(memory))},
+                    TYA(_memory_mode) => {Ok(self.execute_tya(memory))},
+                    TSX(_memory_mode) => {Ok(self.execute_tsx(memory))},
+                    TXS(_memory_mode) => {Ok(self.execute_txs(memory))},
+
                     // STACK
                     PHA(memory_mode) => {Ok(self.execute_pha(memory_mode, memory))},
                     PHP(memory_mode) => {Ok(self.execute_php(memory_mode, memory))},
                     PLA(memory_mode) => {Ok(self.execute_pla(memory_mode, memory))},
                     PLP(memory_mode) => {Ok(self.execute_plp(memory_mode, memory))},
-                    
+
                     // LOGIC
                     AND(memory_mode) => {Ok(self.execute_and(memory_mode, memory))},
                     EOR(memory_mode) => {Ok(self.execute_eor(memory_mode, memory))},
@@ -80,7 +106,7 @@ impl CPU {
                     CMP(memory_mode) => {Ok(self.execute_cmp(memory_mode, memory))},
                     CPX(memory_mode) => {Ok(self.execute_cpx(memory_mode, memory))},
                     CPY(memory_mode) => {Ok(self.execute_cpy(memory_mode, memory))},
-                    
+
                     // INC/DEC
                     INC(memory_mode) => {Ok(self.execute_inc(memory_mode, memory))},
                     INX(memory_mode) => {Ok(self.execute_inx(memory_mode))},
@@ -88,13 +114,13 @@ impl CPU {
                     DEC(memory_mode) => {Ok(self.execute_dec(memory_mode, memory))},
                     DEX(memory_mode) => {Ok(self.execute_dex(memory_mode))},
                     DEY(memory_mode) => {Ok(self.execute_dey(memory_mode))},
-                    
+
                     // SHIFTS
                     ASL(memory_mode) => {Ok(self.execute_asl(memory_mode, memory))},
                     LSR(memory_mode) => {Ok(self.execute_lsr(memory_mode, memory))},
                     ROL(memory_mode) => {Ok(self.execute_rol(memory_mode, memory))},
                     ROR(memory_mode) => {Ok(self.execute_ror(memory_mode, memory))},
-                    
+
                     // JUMPS
                     JMP(memory_mode) => {Ok(self.execute_jmp(memory_mode, memory))},
                     JSR(memory_mode) => {Ok(self.execute_jsr(memory_mode, memory))},
@@ -111,17 +137,51 @@ impl CPU {
                     BVC(_memory_mode) => {Ok(self.execute_bvc(memory))},
 
                     // STATUS
-                    SEC(_memory_mode) => {self.C = true;  Ok(self.PC += 1)},
-                    CLC(_memory_mode) => {self.C = false; Ok(self.PC += 1)},
-                    SEI(_memory_mode) => {self.I = true;  Ok(self.PC += 1)},
-                    CLI(_memory_mode) => {self.I = false; Ok(self.PC += 1)},
-                    SED(_memory_mode) => {self.D = true;  Ok(self.PC += 1)},
-                    CLD(_memory_mode) => {self.D = false; Ok(self.PC += 1)},
-                    CLV(_memory_mode) => {self.V = false; Ok(self.PC += 1)},
-                    
+                    SEC(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("SEC"));
+                        self.C = true;
+                        Ok(self.PC += 1)
+                    },
+                    CLC(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("CLC"));
+                        self.C = false;
+                        Ok(self.PC += 1)
+                    },
+                    SEI(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("SEI"));
+                        self.I = true;
+                        Ok(self.PC += 1)
+                    },
+                    CLI(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("CLI"));
+                        self.I = false;
+                        Ok(self.PC += 1)
+                    },
+                    SED(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("SED"));
+                        self.D = true;
+                        Ok(self.PC += 1)
+                    },
+                    CLD(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("CLD"));
+                        self.D = false;
+                        Ok(self.PC += 1)
+                    },
+                    CLV(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("CLV"));
+                        self.V = false;
+                        Ok(self.PC += 1)
+                    },
+
                     // SYSTEM
-                    BRK(_memory_mode) => Err(()),
-                    NOP(_memory_mode) => Ok(self.PC += 1),
+                    BRK(_memory_mode) => {
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("BRK"));
+                        Ok(self.irq_brk(memory))
+                    },
+                    NOP(_memory_mode) => Ok({
+                        Logger::log_cpu_instruction(&self, pc_data, None, None, format!("NOP"));
+                        self.increment_pc(1);
+                    }),
                     RTI(_memory_mode) => Ok({
                         let status = self.pull_stack(memory);
                         self.load_status(status);
@@ -151,7 +211,7 @@ mod tests {
         memory.data[0..2].copy_from_slice(&[0xCD, 0xAB]);
 
         assert_eq!(test_cpu.PC.0, 0x0000);
-        
+
         let fetched_address = test_cpu.fetch_mem_address(0x0000, &mut memory);
 
         assert_eq!(fetched_address, 0xABCD);
