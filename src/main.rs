@@ -68,14 +68,17 @@ fn main() {
     memory.push_hook(MemoryOperation::Write, MemoryRegion::new(0x2000, 0x0008), ppu_tx);
 
     let thread_handle = thread::spawn(move || { // macOS doesn't like it when window is created not from main thread so we put cpu on the other thread 🤷🏻‍♂️
-        if cpu.tick(&mut memory).is_err() { // emulator loop
-            // TODO: use logger instead
-            println!("");
-            println!("-----------------------------");
-            println!("WE CRASHED");
-            println!("{:#04X?}", cpu);
-            println!("{:#04X}", memory.read(cpu.PC.0 as usize, 1));
-            println!("-----------------------------");
+        loop {
+            if cpu.tick(&mut memory).is_err() { // emulator loop
+                // TODO: use logger instead
+                println!("");
+                println!("-----------------------------");
+                println!("WE CRASHED");
+                println!("{:#04X?}", cpu);
+                println!("{:#04X}", memory.read(cpu.PC.0 as usize, 1));
+                println!("-----------------------------");
+                break;
+            }
         }
     });
 
