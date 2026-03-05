@@ -30,6 +30,8 @@ pub struct PPU {
     vram_address: usize,
     w: bool,
     cpu_pointer: CPUPtrWrapper,
+    dot: f64,
+    is_closed: bool,
 }
 
 impl PPU {
@@ -44,40 +46,39 @@ impl PPU {
             memory_events_rx,
             vram_address: 0,
             w: false,
-            cpu_pointer
+            cpu_pointer,
+            dot: 0.,
+            is_closed: false,
         },
         tx)
     }
 
-    pub fn run(&mut self) {
-        let mut fps_counter = Instant::now();
-        let mut frame_counter = 0;
-        const PIXEL:f64 = 186.2433862;
-        const SCANLINE:f64 = 341.*PIXEL;
-        while self.main_window.is_open() && !self.main_window.is_key_down(Key::Escape) { // Frame start
-            let frame_start = Instant::now();
-            // TODO: process user input
-            self.render_frame(); // We render frame at 0:0
-            if self.pattern_table_window.is_open() { self.render_pattern_table(); } // If pattern table is open - we also render it
-            while frame_start.elapsed().as_nanos() < (241.*SCANLINE) as u128 {
-                self.process_memory_events(); // For 0:0 through 240:341 we wait till VBlank + process memory events
+    fn get_line_dot(&self) -> (usize, usize) {
+        return (self.dot.div_euclid(341.) as usize, self.dot.rem_euclid(341.) as usize);
+    }
+
+    pub fn tick(&mut self) {
+        if !self.is_closed {
+            if self.main_window.is_key_down(Key::Escape) { self.is_closed = true; return; };
+
+            self.process_memory_events();
+
+            if self.dot > 89341.5 {
+                self.dot -= 89341.5;
+                self.render_frame();
+                if self.pattern_table_window.is_open() { self.render_pattern_table(); } // If pattern table is open - we also render it
             }
-            self.set_vblank(); // We set VBlank at 241:0
-            // FIXME: should be only called if enabled in PPUCTRL
-            self.call_nmi();
-            while frame_start.elapsed().as_nanos() < (262.*SCANLINE) as u128 {
-                self.process_memory_events(); // For 241:0 through 261:341 we wait till VBlank end + process memory events
+
+            if self.get_line_dot() == (241, 0) {
+                self.set_vblank();
+                self.call_nmi();
             }
-            self.clear_vblank(); // We clear VBlank at 262:0
-            frame_counter += 1;
-            if fps_counter.elapsed().as_millis()>=10000 {
-                println!("frames per second {frame_counter}");
-                println!("average frametime {:#}", fps_counter.elapsed().as_nanos()/frame_counter);
-                // TODO: Since this would always be longer than exactly needed time we can calculate frametime deviation
-                // and adjust to it in runtime. This would help in emulating games that depend on strict timings
-                frame_counter = 0;
-                fps_counter = Instant::now();
+
+            if self.get_line_dot() == (262, 0) {
+                self.clear_vblank();
             }
+
+            self.dot += 1.;
         }
     }
 
