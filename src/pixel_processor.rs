@@ -1,4 +1,4 @@
-use std::{ sync::mpsc::{channel, Receiver, Sender}, time::Instant };
+use std::{ process::exit, sync::mpsc::{Receiver, Sender, channel}, time::Instant };
 
 use minifb::{ Window, Key };
 
@@ -59,7 +59,8 @@ impl PPU {
 
     pub fn tick(&mut self) {
         if !self.is_closed {
-            if self.main_window.is_key_down(Key::Escape) { self.is_closed = true; return; };
+            if self.main_window.is_key_down(Key::Escape) { self.is_closed = true; exit(0); };
+            if self.pattern_table_window.is_key_down(Key::Escape) { self.is_closed = true; exit(0); };
 
             self.process_memory_events();
 
