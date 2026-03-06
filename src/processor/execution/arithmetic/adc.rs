@@ -85,7 +85,7 @@ impl CPU {
     }
 
     fn execute_adc_indirect_y(&mut self, memory: &mut MEM) {
-        let inst = Instruction::get_indirect_x(&self, memory);
+        let inst = Instruction::get_indirect_y(&self, memory);
         inst.log(&self, "ADC");
         adc!(self, inst, memory);
         self.increment_pc(2);
