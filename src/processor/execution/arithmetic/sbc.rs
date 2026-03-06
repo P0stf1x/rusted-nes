@@ -24,7 +24,7 @@ impl CPU {
 macro_rules! sbc {
     ($cpu:ident, $instruction:ident, $memory:ident) => {{
         let value = $instruction.read($memory);
-        let carry = ($cpu.get_a() as i16 - value as i16 -1 + $cpu.C as i16) < 0;
+        let carry = !($cpu.get_a() as i16 - value as i16 -1 + $cpu.C as i16) < 0;
         let prev_a = $cpu.get_a();
         $cpu.store_a((Wrapping::<u8>($cpu.get_a()) - Wrapping::<u8>(value) - Wrapping::<u8>(1) + Wrapping::<u8>($cpu.C as u8)).0);
         $cpu.C = carry;
