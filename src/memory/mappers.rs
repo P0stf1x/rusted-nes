@@ -30,6 +30,20 @@ fn add_write_protection_and_mirroring((mut memory, mut ppu_memory): (MEM, PPU_ME
         mirrored_memory: MemoryRegion { region_address: 0x3F20, region_size: 0x00E0 }
     }).unwrap();
 
+    // PPU palette transparent
+    ppu_memory.push_mirrored_range(MemoryMirror {
+        physical_memory: MemoryRegion { region_address: 0x3F00, region_size: 0x0001 },
+        mirrored_memory: MemoryRegion { region_address: 0x3F10, region_size: 0x0001 }
+    }).unwrap();
+    ppu_memory.push_mirrored_range(MemoryMirror {
+        physical_memory: MemoryRegion { region_address: 0x3F04, region_size: 0x0001 },
+        mirrored_memory: MemoryRegion { region_address: 0x3F14, region_size: 0x0001 }
+    }).unwrap();
+    ppu_memory.push_mirrored_range(MemoryMirror {
+        physical_memory: MemoryRegion { region_address: 0x3F0C, region_size: 0x0001 },
+        mirrored_memory: MemoryRegion { region_address: 0x3F1C, region_size: 0x0001 }
+    }).unwrap();
+
     // You shouldn't be able to write to PPU registers directly, it all done via hooks
     memory.push_write_protected_region(WriteProtectedRegion { protected_memory: MemoryRegion {
         region_address: 0x2000,
