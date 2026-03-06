@@ -67,7 +67,7 @@ impl CPU {
     }
 
     fn execute_cmp_absy(&mut self, memory: &mut MEM) {
-        let inst = Instruction::get_absx(&self, memory);
+        let inst = Instruction::get_absy(&self, memory);
         inst.log(&self, "CMP");
         cmp!(self, inst, memory);
         self.increment_pc(3);
