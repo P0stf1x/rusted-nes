@@ -9,8 +9,8 @@ impl PPU {
                         self.nmi_enabled = value & 0b_1000_0000 != 0;
                         // let ppu_master = value & 0b_0100_0000 != 0;
                         // let two_high_sprites = value & 0b_0010_0000 != 0;
-                        self.pattern_table_bit_plane = value & 0b_0001_0000 != 0;
-                        // let pattern_table_bit_plane_8x8 = value & 0b_0000_1000 != 0;
+                        self.bg_plane = value & 0b_0001_0000 != 0;
+                        self.fg_plane = value & 0b_0000_1000 != 0;
                         self.ppudata_write_down = value & 0b_0000_0100 != 0;
                         self.nametable_address = 0x2000 + ((value & 0b_0000_0011) as usize * 0x400);
                     }
@@ -18,6 +18,23 @@ impl PPU {
                         self.clear_vblank();
                         self.ppu_addr_high_byte = true;
                     }
+                    MemoryEvent {operation: Write, address: 0x2003, value} => { // OAMADDR
+                        self.oam_addr = value as usize;
+                        unsafe {
+                            (&mut *self.memory_pointer.0).data[0x2004] = self.oam_data[self.oam_addr];
+                        }
+                    },
+                    MemoryEvent {operation: Read, address: 0x2004, value} => { // OAMDATA
+                        // actually there's nothing to do, since we write expected data when changing addr
+                    },
+                    MemoryEvent {operation: Write, address: 0x2004, value} => { // OAMDATA
+                        self.oam_data[self.oam_addr] = value;
+                        self.oam_addr = (self.oam_addr + 1) & 0xFF;
+                        unsafe {
+                            // (&mut *self.memory_pointer.0).write_no_hook(0x2004, self.oam_data[self.oam_addr]);
+                            (&mut *self.memory_pointer.0).data[0x2004] = self.oam_data[self.oam_addr];
+                        }
+                    },
                     MemoryEvent {operation: Write, address: 0x2005, value} => { // PPUSCROLL
                         if self.ppu_addr_high_byte {
                             self.x_offset = value as usize;
@@ -45,6 +62,15 @@ impl PPU {
                     MemoryEvent {operation: Write, address: 0x2007, value} => { // PPUDATA
                         self.ppu_memory.write(self.ppu_addr, value);
                         self.increment_vram_address();
+                    },
+
+                    MemoryEvent {operation: Write, address: 0x4014, value} => { // OAMDMA
+                        let page = (value as usize) << 8;
+                        for address_offset in 0..=0xFF {
+                            self.oam_data[address_offset] = unsafe {
+                                (&mut *self.memory_pointer.0).read_no_hook(page+address_offset, 1) as u8
+                            }
+                        };
                     },
 
                     MemoryEvent {operation: Write, address: 0x4016, value} => { // Controller capture state

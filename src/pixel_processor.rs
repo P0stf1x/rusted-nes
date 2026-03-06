@@ -33,13 +33,17 @@ pub struct PPU {
     main_framebuffer: Vec<u32>,
     pattern_table_framebuffer: Vec<u32>,
     nmi_enabled: bool,
-    pattern_table_bit_plane: bool,
+    bg_plane: bool,
     ppudata_write_down: bool,
     nametable_address: usize,
     ppu_addr_high_byte: bool,
     ppu_addr: usize,
     x_offset: usize,
     y_offset: usize,
+    controller_state: u8,
+    oam_data: [u8; 256],
+    oam_addr: usize,
+    fg_plane: bool,
 }
 
 impl PPU {
@@ -58,13 +62,17 @@ impl PPU {
             main_framebuffer: vec![0; 256*240],
             pattern_table_framebuffer: vec![0; 256*128],
             nmi_enabled: true,
-            pattern_table_bit_plane: false,
+            bg_plane: false,
             ppudata_write_down: false,
             nametable_address: 0x2000,
             ppu_addr_high_byte: true,
             ppu_addr: 0x0000,
             x_offset: 0,
             y_offset: 0,
+            controller_state: 0,
+            oam_data: [0; 256],
+            oam_addr: 0,
+            fg_plane: false,
         },
         tx)
     }

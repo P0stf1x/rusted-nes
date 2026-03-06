@@ -17,7 +17,17 @@ pub struct PixelPalette {
 }
 
 impl PixelPalette {
-    pub fn get(ppu_memory: &PPU_MEM, tile_id: usize) -> Self {
+    pub fn get_by_id(ppu_memory: &PPU_MEM, palette_id: usize) -> Self {
+        let palette_addr = ppu_memory.read(0x3F00 + palette_id*4, 4);
+        return Self {
+            background: get_color(palette_addr as u8),
+            color1: get_color((palette_addr>>8) as u8),
+            color2: get_color((palette_addr>>16) as u8),
+            color3: get_color((palette_addr>>24) as u8),
+        };
+    }
+
+    pub fn get(ppu_memory: &PPU_MEM, tile_id: usize, nametable_address: usize) -> Self {
         let tile_x = tile_id % 32;
         let tile_y = tile_id / 32;
         let tile_attribute_x = tile_x % 4;

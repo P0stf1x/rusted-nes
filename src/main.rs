@@ -65,6 +65,7 @@ fn main() {
     let (mut ppu, ppu_tx) = PPU::new(memory_pointer, ppu_memory, cpu_pointer);
     memory.push_hook(MemoryOperation::Read, MemoryRegion::new(0x2000, 0x0008), ppu_tx.clone());
     memory.push_hook(MemoryOperation::Write, MemoryRegion::new(0x2000, 0x0008), ppu_tx.clone());
+    memory.push_hook(MemoryOperation::Write, MemoryRegion::new(0x4014, 0x0001), ppu_tx.clone());
     memory.push_hook(MemoryOperation::Read, MemoryRegion::new(0x4016, 0x0002), ppu_tx.clone());
     memory.push_hook(MemoryOperation::Write, MemoryRegion::new(0x4016, 0x0002), ppu_tx.clone());
 
