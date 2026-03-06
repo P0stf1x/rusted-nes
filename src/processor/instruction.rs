@@ -17,6 +17,13 @@ pub struct Instruction {
 
 impl Instruction {
     pub fn log(&self, cpu: &CPU, instruction_name: &str) {
+        if instruction_name == "JMP" || instruction_name == "JSR" {
+            match self.mode {
+                Absolute => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name} ${:04X}", self.memory_address.unwrap())),
+                _ => panic!(),
+            }
+            return;
+        }
         match self.mode {
             Implicit => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name}")),
             Acc => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name} A")),
@@ -30,7 +37,7 @@ impl Instruction {
             AbsoluteY => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name} ${:04X},Y @ {:04X} = {:02X}", self.memory_address.unwrap(), (Wrapping::<u16>(self.memory_address.unwrap()) + Wrapping::<u16>(cpu.get_y() as u16)).0, self.value.unwrap())),
             Indirect => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name} (${:04X}) = {:04X}", combine_operands(self.operand1.unwrap(), self.operand2.unwrap()), self.memory_address.unwrap())),
             IndirectX => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name} (${:02X},X) @ {:02X} = {:04X} = {:02X}", self.memory_indirect_address.unwrap(), (Wrapping::<u8>(self.memory_indirect_address.unwrap()) + Wrapping::<u8>(cpu.get_x())).0, self.memory_address.unwrap(), self.value.unwrap())),
-            IndirectY => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name} (${:02X}),Y = {:04X} @ {:04X} = {:02X}", self.memory_indirect_address.unwrap(), self.memory_address.unwrap(), (Wrapping::<u16>(self.memory_address.unwrap()) + Wrapping::<u16>(cpu.get_y() as u16)).0, self.value.unwrap())),
+            IndirectY => Logger::log_cpu_instruction(cpu, self.instruction, self.operand1, self.operand2, format!("{instruction_name} (${:02X}),Y = {:04X} @ {:04X} = {:02X}", self.memory_indirect_address.unwrap(), (Wrapping::<u16>(self.memory_address.unwrap()) - Wrapping::<u16>(cpu.get_y() as u16)).0, self.memory_address.unwrap(), self.value.unwrap())),
         }
     }
 
