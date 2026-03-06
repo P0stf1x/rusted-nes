@@ -1,19 +1,23 @@
 use std::num::Wrapping;
 
+use crate::memory::MEM;
 use crate::processor::MemoryMode;
 use crate::CPU;
+use crate::processor::instruction::Instruction;
 
 impl CPU {
-    pub fn execute_inx(&mut self, mode: MemoryMode) {
+    pub fn execute_inx(&mut self, mode: MemoryMode, memory: &mut MEM) {
         match mode {
-            MemoryMode::Implicit  => self.execute_inx_imp(),
+            MemoryMode::Implicit  => self.execute_inx_imp(memory),
             _                     => panic!("No {:?} memory mode for INX", mode)
         }
     }
 }
 
 impl CPU {
-    fn execute_inx_imp(&mut self) {
+    fn execute_inx_imp(&mut self, memory: &mut MEM) {
+        let inst = Instruction::get_imp(&self, memory);
+        inst.log(&self, "INX");
         self.store_x((Wrapping::<u8>(self.get_x()) + Wrapping::<u8>(1)).0);
         self.Z = self.get_x() == 0;
         self.N = self.get_x() & 0b_1000_0000 != 0;
@@ -23,59 +27,64 @@ impl CPU {
 
 #[cfg(test)]
 mod inx_tests {
+    use crate::memory::MEMORY_SIZE;
+
     use super::*;
 
     #[test]
     fn test_inx() {
         let mut test_cpu: CPU = CPU::new();
+        let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
 
         assert_eq!(test_cpu.X.0, 0x00);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        
-        test_cpu.execute_inx_imp();
+
+        test_cpu.execute_inx_imp(&mut test_memory);
         assert_eq!(test_cpu.X.0, 0x01);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        
+
         test_cpu.X = Wrapping(0x41);
-        test_cpu.execute_inx_imp();
+        test_cpu.execute_inx_imp(&mut test_memory);
         assert_eq!(test_cpu.X.0, 0x42);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
-        
+
         test_cpu.X = Wrapping(0x68);
-        test_cpu.execute_inx_imp();
+        test_cpu.execute_inx_imp(&mut test_memory);
         assert_eq!(test_cpu.X.0, 0x69);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
     }
-    
+
     #[test]
     fn test_inx_negative() {
         let mut test_cpu: CPU = CPU::new();
-        
+        let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
+
         test_cpu.X = Wrapping(0x7Fu8);
         assert_eq!(test_cpu.X.0, 0x7F);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
 
-        test_cpu.execute_inx_imp();
+        test_cpu.execute_inx_imp(&mut test_memory);
         assert_eq!(test_cpu.X.0, 0x80);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, true);
     }
-    
+
     #[test]
     fn test_inx_zero() {
         let mut test_cpu: CPU = CPU::new();
-        
+        let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
+
         test_cpu.X = Wrapping(0xFFu8);
         assert_eq!(test_cpu.X.0, 0xFF);
         assert_eq!(test_cpu.Z, false);
         assert_eq!(test_cpu.N, false);
 
-        test_cpu.execute_inx_imp();
+        test_cpu.execute_inx_imp(&mut test_memory);
         assert_eq!(test_cpu.X.0, 0x00);
         assert_eq!(test_cpu.Z, true);
         assert_eq!(test_cpu.N, false);

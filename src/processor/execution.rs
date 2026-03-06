@@ -109,11 +109,11 @@ impl CPU {
 
                     // INC/DEC
                     INC(memory_mode) => {Ok(self.execute_inc(memory_mode, memory))},
-                    INX(memory_mode) => {Ok(self.execute_inx(memory_mode))},
-                    INY(memory_mode) => {Ok(self.execute_iny(memory_mode))},
+                    INX(memory_mode) => {Ok(self.execute_inx(memory_mode, memory))},
+                    INY(memory_mode) => {Ok(self.execute_iny(memory_mode, memory))},
                     DEC(memory_mode) => {Ok(self.execute_dec(memory_mode, memory))},
-                    DEX(memory_mode) => {Ok(self.execute_dex(memory_mode))},
-                    DEY(memory_mode) => {Ok(self.execute_dey(memory_mode))},
+                    DEX(memory_mode) => {Ok(self.execute_dex(memory_mode, memory))},
+                    DEY(memory_mode) => {Ok(self.execute_dey(memory_mode, memory))},
 
                     // SHIFTS
                     ASL(memory_mode) => {Ok(self.execute_asl(memory_mode, memory))},
