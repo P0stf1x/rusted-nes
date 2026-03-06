@@ -24,11 +24,11 @@ impl CPU {
 macro_rules! adc {
     ($cpu:ident, $instruction:ident, $memory:ident) => {{
         let value = $instruction.read($memory);
-        let carry = ($cpu.get_a() as u16 + value as u16) > 0xFF;
+        let carry = ($cpu.get_a() as u16 + value as u16 + $cpu.C as u16) > 0xFF;
         let prev_a = $cpu.get_a();
         $cpu.store_a((Wrapping::<u8>(prev_a) + Wrapping::<u8>(value) + Wrapping::<u8>($cpu.C as u8)).0);
         $cpu.C = carry;
-        $cpu.V = ($cpu.get_a() & 0b_1000_0000) != (prev_a & 0b_1000_0000);
+        $cpu.V = ($cpu.get_a() ^ prev_a) & ($cpu.get_a() ^ value) & 0x80 != 0;
         $cpu.Z = $cpu.get_a() == 0;
         $cpu.N = $cpu.get_a() & 0b_1000_0000 != 0;
     }}
