@@ -130,4 +130,18 @@ impl PPU {
     fn clear_sprite_overflow(&self) {
         unsafe{(&mut *self.memory_pointer.0).data[0x2002] &= 0b_1101_1111};
     }
+
+    fn get_controller_state(&self) -> u8 {
+        let mut value = 0x00;
+        if self.main_window.is_key_down(Key::Right) { value += 0b_1000_0000 } // DPAD
+        if self.main_window.is_key_down(Key::Left) { value += 0b_0100_0000 }
+        if self.main_window.is_key_down(Key::Down) { value += 0b_0010_0000 }
+        if self.main_window.is_key_down(Key::Up) { value += 0b_0001_0000 }
+
+        if self.main_window.is_key_down(Key::V) { value += 0b_0000_1000 } // Start
+        if self.main_window.is_key_down(Key::C) { value += 0b_0000_0100 } // Select
+        if self.main_window.is_key_down(Key::X) { value += 0b_0000_0010 } // B
+        if self.main_window.is_key_down(Key::Z) { value += 0b_0000_0001 } // A
+        return value;
+    }
 }

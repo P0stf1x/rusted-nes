@@ -46,6 +46,20 @@ impl PPU {
                         self.ppu_memory.write(self.ppu_addr, value);
                         self.increment_vram_address();
                     },
+
+                    MemoryEvent {operation: Write, address: 0x4016, value} => { // Controller capture state
+                        self.controller_state = self.get_controller_state(); // FIXME: You're actually supposed to read into the shift register only when bit 0 is set, and stop reading when bit 0 is cleared.
+                        unsafe {
+                            (&mut *self.memory_pointer.0).data[0x4016] = self.controller_state & 0b_0000_0001;
+                        }
+                    },
+                    MemoryEvent {operation: Read, address: 0x4016, value} => { // Controller 1 read
+                        self.controller_state = self.controller_state >> 1;
+                        self.controller_state |= 0b_1000_0000;
+                        unsafe {
+                            (&mut *self.memory_pointer.0).data[0x4016] = self.controller_state & 0b_0000_0001;
+                        }
+                    },
                     _ => (),
                 }
             },
