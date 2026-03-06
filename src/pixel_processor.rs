@@ -32,6 +32,8 @@ pub struct PPU {
     cpu_pointer: CPUPtrWrapper,
     dot: f64,
     is_closed: bool,
+    main_framebuffer: Vec<u32>,
+    pattern_table_framebuffer: Vec<u32>,
 }
 
 impl PPU {
@@ -49,6 +51,8 @@ impl PPU {
             cpu_pointer,
             dot: 0.,
             is_closed: false,
+            main_framebuffer: vec![0; 256*240],
+            pattern_table_framebuffer: vec![0; 256*128],
         },
         tx)
     }
