@@ -27,13 +27,19 @@ pub struct PPU {
     pattern_table_window: Window,
     ppu_memory: PPU_MEM,
     memory_events_rx: Receiver<MemoryEvent>,
-    vram_address: usize,
-    w: bool,
     cpu_pointer: CPUPtrWrapper,
     dot: f64,
     is_closed: bool,
     main_framebuffer: Vec<u32>,
     pattern_table_framebuffer: Vec<u32>,
+    nmi_enabled: bool,
+    pattern_table_bit_plane: bool,
+    ppudata_write_down: bool,
+    nametable_address: usize,
+    ppu_addr_high_byte: bool,
+    ppu_addr: usize,
+    x_offset: usize,
+    y_offset: usize,
 }
 
 impl PPU {
@@ -46,13 +52,19 @@ impl PPU {
             pattern_table_window: Self::create_pattern_window(),
             ppu_memory,
             memory_events_rx,
-            vram_address: 0,
-            w: false,
             cpu_pointer,
             dot: 0.,
             is_closed: false,
             main_framebuffer: vec![0; 256*240],
             pattern_table_framebuffer: vec![0; 256*128],
+            nmi_enabled: true,
+            pattern_table_bit_plane: false,
+            ppudata_write_down: false,
+            nametable_address: 0x2000,
+            ppu_addr_high_byte: true,
+            ppu_addr: 0x0000,
+            x_offset: 0,
+            y_offset: 0,
         },
         tx)
     }
@@ -74,13 +86,17 @@ impl PPU {
                 if self.pattern_table_window.is_open() { self.render_pattern_table(); } // If pattern table is open - we also render it
             }
 
-            if self.get_line_dot() == (241, 0) {
+            if self.get_line_dot() == (241, 1) {
                 self.set_vblank();
-                self.call_nmi();
+                if self.nmi_enabled {
+                    self.call_nmi();
+                }
             }
 
-            if self.get_line_dot() == (262, 0) {
+            if self.get_line_dot() == (261, 1) {
                 self.clear_vblank();
+                self.clear_sprite_0_hit();
+                self.clear_sprite_overflow();
             }
 
             self.dot += 1.;
@@ -88,7 +104,7 @@ impl PPU {
     }
 
     fn call_nmi(&self) {
-        unsafe{(*self.cpu_pointer.0).nmi((&mut *self.memory_pointer.0));};
+        unsafe{(*self.cpu_pointer.0).nmi(&mut *self.memory_pointer.0);};
     }
 
     fn set_vblank(&self) {
@@ -97,5 +113,21 @@ impl PPU {
 
     fn clear_vblank(&self) {
         unsafe{(&mut *self.memory_pointer.0).data[0x2002] &= 0b_0111_1111};
+    }
+
+    fn set_sprite_0_hit(&self) {
+        unsafe{(&mut *self.memory_pointer.0).data[0x2002] |= 0b_0100_0000};
+    }
+
+    fn clear_sprite_0_hit(&self) {
+        unsafe{(&mut *self.memory_pointer.0).data[0x2002] &= 0b_1011_1111};
+    }
+
+    fn set_sprite_overflow(&self) {
+        unsafe{(&mut *self.memory_pointer.0).data[0x2002] |= 0b_0010_0000};
+    }
+
+    fn clear_sprite_overflow(&self) {
+        unsafe{(&mut *self.memory_pointer.0).data[0x2002] &= 0b_1101_1111};
     }
 }

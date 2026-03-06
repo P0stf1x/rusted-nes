@@ -8,7 +8,7 @@ impl PPU {
         // TODO: implement ImGUI rendering
         for i in 0..32*30 { // Each byte is 8x8 sprite index so in turn we fill 256x240 pixels
             // TODO: It renders only first plane right now
-            let (tile, tile_palette) = tile::get_tile_and_palette(&self.ppu_memory, i, false);
+            let (tile, tile_palette) = tile::get_tile_and_palette(&self.ppu_memory, i, self.pattern_table_bit_plane, self.x_offset, self.y_offset);
             overlay_sprite(&mut self.main_framebuffer, &tile.rendered(tile_palette), (i%32)*8, (i/32)*8, 256);
         }
         self.main_window

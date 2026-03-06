@@ -24,7 +24,7 @@ impl PixelPalette {
         let tile_attribute_y = tile_y % 4;
         let attribute_byte_offset = (tile_x / 4) + (tile_y / 4 * 8);
         let attribute_byte = ppu_memory.read(0x23C0 + attribute_byte_offset, 1);
-        
+
         let palette_index = match (tile_attribute_x/2, tile_attribute_y/2) {
             (0, 0) => attribute_byte & 0b_0000_0011,
             (1, 0) => (attribute_byte & 0b_0000_1100) >> 2,
@@ -111,8 +111,10 @@ impl Tile {
     }
 }
 
-pub fn get_tile_and_palette(ppu_memory: &PPU_MEM, tile_id: usize, plane1: bool) -> (Tile, PixelPalette) {
-    let tile_pattern_id = ppu_memory.read(0x2000+tile_id, 1);
+pub fn get_tile_and_palette(ppu_memory: &PPU_MEM, tile_id: usize, plane1: bool, x_offset: usize, y_offset: usize) -> (Tile, PixelPalette) {
+    let x_tile_offset = (x_offset & 0b_1111_1000) >> 3; // no sub tile offset
+    let y_tile_offset = ((y_offset & 0b_1111_1000) >> 3) * 64;
+    let tile_pattern_id = ppu_memory.read(0x2000+tile_id+x_tile_offset+y_tile_offset, 1);
     let tile = Tile::get(ppu_memory, tile_pattern_id, plane1);
     let palette = PixelPalette::get(ppu_memory, tile_id);
     return (tile, palette);
