@@ -28,7 +28,7 @@ macro_rules! sbc {
         let prev_a = $cpu.get_a();
         $cpu.store_a((Wrapping::<u8>($cpu.get_a()) - Wrapping::<u8>(value) - Wrapping::<u8>(1) + Wrapping::<u8>($cpu.C as u8)).0);
         $cpu.C = carry;
-        $cpu.V = ($cpu.get_a() & 0b_1000_0000) != (prev_a & 0b_1000_0000);
+        $cpu.V = ($cpu.get_a() ^ prev_a) & ($cpu.get_a() ^ !value) & 0x80 != 0;
         $cpu.Z = $cpu.get_a() == 0;
         $cpu.N = $cpu.get_a() & 0b_1000_0000 != 0;
     }}
