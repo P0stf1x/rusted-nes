@@ -49,7 +49,7 @@ impl CPU {
     fn execute_php_imp(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_imp(&self, memory);
         inst.log(&self, "PHP");
-        let mut value = self.get_s();
+        let mut value = self.store_status();
         value |= 0b_0011_0000;
         self.push_stack(value, memory);
         self.increment_pc(1);
@@ -75,10 +75,10 @@ impl CPU {
         let inst = Instruction::get_imp(&self, memory);
         inst.log(&self, "PLP");
         let mut value = self.pull_stack(memory);
-        let current_status = self.get_s() & 0b_0011_0000;
+        let current_status = self.store_status() & 0b_0011_0000;
         value &= 0b_1100_1111;
         value |= current_status;
-        self.store_s(value);
+        self.load_status(value);
         self.increment_pc(1);
     }
 }
