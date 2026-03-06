@@ -19,8 +19,8 @@ impl CPU {
 }
 
 macro_rules! lda {
-    ($cpu:ident, $instruction:ident) => {{
-        let value = $instruction.value.unwrap();
+    ($cpu:ident, $instruction:ident, $memory:ident) => {{
+        let value = $instruction.read($memory);
         $cpu.store_a(value);
         $cpu.Z = $cpu.get_a() == 0;
         $cpu.N = $cpu.get_a() & 0b_1000_0000 != 0;
@@ -32,56 +32,56 @@ impl CPU {
     fn execute_lda_imm(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_imm(&self, memory);
         inst.log(&self, "LDA");
-        lda!(self, inst);
+        lda!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_lda_zpg(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_zpg(&self, memory);
         inst.log(&self, "LDA");
-        lda!(self, inst);
+        lda!(self, inst, memory);
         self.increment_pc(2);
     }
-    
+
     fn execute_lda_zpgx(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_zpgx(&self, memory);
         inst.log(&self, "LDA");
-        lda!(self, inst);
+        lda!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_lda_abs(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_abs(&self, memory);
         inst.log(&self, "LDA");
-        lda!(self, inst);
+        lda!(self, inst, memory);
         self.increment_pc(3);
     }
 
     fn execute_lda_absx(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_absx(&self, memory);
         inst.log(&self, "LDA");
-        lda!(self, inst);
+        lda!(self, inst, memory);
         self.increment_pc(3);
     }
 
     fn execute_lda_absy(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_absy(&self, memory);
         inst.log(&self, "LDA");
-        lda!(self, inst);
+        lda!(self, inst, memory);
         self.increment_pc(3);
     }
 
     fn execute_lda_indirect_x(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_indirect_x(&self, memory);
         inst.log(&self, "LDA");
-        lda!(self, inst);
+        lda!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_lda_indirect_y(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_indirect_y(&self, memory);
         inst.log(&self, "LDA");
-        lda!(self, inst);
+        lda!(self, inst, memory);
         self.increment_pc(2);
     }
 }

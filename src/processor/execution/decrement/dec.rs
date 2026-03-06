@@ -19,7 +19,7 @@ impl CPU {
 
 macro_rules! dec {
     ($cpu:ident, $instruction:ident, $memory:ident) => {{
-        let result = (Wrapping::<u8>($instruction.value.unwrap()) - Wrapping::<u8>(1)).0;
+        let result = (Wrapping::<u8>($instruction.read($memory)) - Wrapping::<u8>(1)).0;
         $memory.write($instruction.memory_address.unwrap() as usize, result);
         $cpu.Z = result == 0;
         $cpu.N = result & 0b_1000_0000 != 0;

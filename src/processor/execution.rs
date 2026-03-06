@@ -40,7 +40,7 @@ impl CPU {
         };
         match self.cpu_state {
             CpuState::Ready => {
-                let wait_time = Instruction::get(&self, memory).count_cycles();
+                let wait_time = Instruction::count_cycles(self.get_instr(memory));
                 self.cpu_state = CpuState::Waiting(wait_time as u8);
                 self.execute(memory)
             },
@@ -66,9 +66,9 @@ impl CPU {
                 let status = self.store_status();
 
                 // TODO: use logger instead of just printing
-                // 
-                println!("{:04X}  {:02X}                                        A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", self.PC.0, pc_data, self.A.0, self.X.0, self.Y.0, status, self.S.0);
-                
+                //
+                // println!("{:04X}  {:02X}                                        A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", self.PC.0, pc_data, self.A.0, self.X.0, self.Y.0, status, self.S.0);
+
                 #[allow(unreachable_patterns)] // In case of adding new opcodes to the enum
                 match operation {
 

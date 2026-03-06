@@ -20,8 +20,8 @@ impl CPU {
 }
 
 macro_rules! eor {
-    ($cpu:ident, $instruction:ident) => {{
-        $cpu.store_a($cpu.get_a() ^ $instruction.value.unwrap());
+    ($cpu:ident, $instruction:ident, $memory:ident) => {{
+        $cpu.store_a($cpu.get_a() ^ $instruction.read($memory));
         $cpu.Z = $cpu.get_a() == 0;
         $cpu.N = $cpu.get_a() & 0b_1000_0000 != 0;
     }}
@@ -31,56 +31,56 @@ impl CPU {
     fn execute_eor_imm(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_imm(&self, memory);
         inst.log(&self, "EOR");
-        eor!(self, inst);
+        eor!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_eor_zpg(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_zpg(&self, memory);
         inst.log(&self, "EOR");
-        eor!(self, inst);
+        eor!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_eor_zpgx(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_zpgx(&self, memory);
         inst.log(&self, "EOR");
-        eor!(self, inst);
+        eor!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_eor_abs(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_abs(&self, memory);
         inst.log(&self, "EOR");
-        eor!(self, inst);
+        eor!(self, inst, memory);
         self.increment_pc(3);
     }
 
     fn execute_eor_absx(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_absx(&self, memory);
         inst.log(&self, "EOR");
-        eor!(self, inst);
+        eor!(self, inst, memory);
         self.increment_pc(3);
     }
 
     fn execute_eor_absy(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_absy(&self, memory);
         inst.log(&self, "EOR");
-        eor!(self, inst);
+        eor!(self, inst, memory);
         self.increment_pc(3);
     }
 
     fn execute_eor_indirect_x(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_indirect_x(&self, memory);
         inst.log(&self, "EOR");
-        eor!(self, inst);
+        eor!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_eor_indirect_y(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_indirect_y(&self, memory);
         inst.log(&self, "EOR");
-        eor!(self, inst);
+        eor!(self, inst, memory);
         self.increment_pc(2);
     }
 }

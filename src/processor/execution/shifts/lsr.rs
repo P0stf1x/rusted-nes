@@ -18,7 +18,7 @@ impl CPU {
 
 macro_rules! lsr {
     ($cpu:ident, $instruction:ident, $memory:ident) => {{
-        let value = $instruction.value.unwrap();
+        let value = $instruction.read($memory);
         $cpu.C = (value & 0b_0000_0001) != 0;
         let result = value >> 1;
         $cpu.Z = result == 0;

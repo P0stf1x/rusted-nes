@@ -17,10 +17,11 @@ impl CPU {
 }
 
 macro_rules! cpy {
-    ($cpu:ident, $instruction:ident) => {{
-        $cpu.C = $cpu.get_y() >= $instruction.value.unwrap();
-        $cpu.Z = $cpu.get_y() == $instruction.value.unwrap();
-        $cpu.N = (Wrapping::<u8>($cpu.get_y()) - Wrapping::<u8>($instruction.value.unwrap())).0 & 0b_1000_0000 != 0;
+    ($cpu:ident, $instruction:ident, $memory:ident) => {{
+        let value = $instruction.read($memory);
+        $cpu.C = $cpu.get_y() >= value;
+        $cpu.Z = $cpu.get_y() == value;
+        $cpu.N = (Wrapping::<u8>($cpu.get_y()) - Wrapping::<u8>(value)).0 & 0b_1000_0000 != 0;
     }}
 }
 
@@ -28,21 +29,21 @@ impl CPU {
     fn execute_cpy_imm(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_imm(&self, memory);
         inst.log(&self, "CPY");
-        cpy!(self, inst);
+        cpy!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_cpy_zpg(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_zpg(&self, memory);
         inst.log(&self, "CPY");
-        cpy!(self, inst);
+        cpy!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_cpy_abs(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_abs(&self, memory);
         inst.log(&self, "CPY");
-        cpy!(self, inst);
+        cpy!(self, inst, memory);
         self.increment_pc(3);
     }
 }

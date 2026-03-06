@@ -34,8 +34,8 @@ impl Instruction {
         }
     }
 
-    pub fn count_cycles(&self) -> u64 {
-        let mut cycle_count: u64 = match self.mode {
+    pub fn count_cycles(instruction: u8) -> u64 {
+        let mut cycle_count: u64 = match Self::get_memory_mode(instruction) {
             Implicit  => 2,
             Acc       => 2,
             Immediate => 2,
@@ -50,7 +50,7 @@ impl Instruction {
             IndirectX => 6,
             IndirectY => 5, // FIXME: +1 on page cross
         };
-        cycle_count += Self::is_rmw(self.instruction);
+        cycle_count += Self::is_rmw(instruction);
         return cycle_count;
     }
 
@@ -73,87 +73,87 @@ impl Instruction {
         }
     }
 
-    pub fn get(cpu: &CPU, memory: &mut MEM) -> Self {
-        let instruction = cpu.get_instr(memory);
+    fn get_memory_mode(instruction: u8) -> MemoryMode {
+        // let instruction = cpu.get_instr_without_hook(memory);
         match instruction { // Non non standard instructions
-            0x00 => return Self::get_imp(cpu, memory),
-            0x20 => return Self::get_abs(cpu, memory),
-            0x40 => return Self::get_imp(cpu, memory),
-            0x60 => return Self::get_imp(cpu, memory),
+            0x00 => return MemoryMode::Implicit,
+            0x20 => return MemoryMode::Absolute,
+            0x40 => return MemoryMode::Implicit,
+            0x60 => return MemoryMode::Implicit,
 
-            0x08 => return Self::get_imp(cpu, memory),
-            0x28 => return Self::get_imp(cpu, memory),
-            0x48 => return Self::get_imp(cpu, memory),
-            0x68 => return Self::get_imp(cpu, memory),
-            0x88 => return Self::get_imp(cpu, memory),
-            0xA8 => return Self::get_imp(cpu, memory),
-            0xC8 => return Self::get_imp(cpu, memory),
-            0xE8 => return Self::get_imp(cpu, memory),
+            0x08 => return MemoryMode::Implicit,
+            0x28 => return MemoryMode::Implicit,
+            0x48 => return MemoryMode::Implicit,
+            0x68 => return MemoryMode::Implicit,
+            0x88 => return MemoryMode::Implicit,
+            0xA8 => return MemoryMode::Implicit,
+            0xC8 => return MemoryMode::Implicit,
+            0xE8 => return MemoryMode::Implicit,
 
-            0x18 => return Self::get_imp(cpu, memory),
-            0x38 => return Self::get_imp(cpu, memory),
-            0x58 => return Self::get_imp(cpu, memory),
-            0x78 => return Self::get_imp(cpu, memory),
-            0x98 => return Self::get_imp(cpu, memory),
-            0xB8 => return Self::get_imp(cpu, memory),
-            0xD8 => return Self::get_imp(cpu, memory),
-            0xF8 => return Self::get_imp(cpu, memory),
+            0x18 => return MemoryMode::Implicit,
+            0x38 => return MemoryMode::Implicit,
+            0x58 => return MemoryMode::Implicit,
+            0x78 => return MemoryMode::Implicit,
+            0x98 => return MemoryMode::Implicit,
+            0xB8 => return MemoryMode::Implicit,
+            0xD8 => return MemoryMode::Implicit,
+            0xF8 => return MemoryMode::Implicit,
 
-            0x8A => return Self::get_imp(cpu, memory),
-            0x9A => return Self::get_imp(cpu, memory),
-            0xAA => return Self::get_imp(cpu, memory),
-            0xBA => return Self::get_imp(cpu, memory),
-            0xCA => return Self::get_imp(cpu, memory),
-            0xEA => return Self::get_imp(cpu, memory),
+            0x8A => return MemoryMode::Implicit,
+            0x9A => return MemoryMode::Implicit,
+            0xAA => return MemoryMode::Implicit,
+            0xBA => return MemoryMode::Implicit,
+            0xCA => return MemoryMode::Implicit,
+            0xEA => return MemoryMode::Implicit,
             _ => ()
         };
         match instruction & 0b_0000_0011 {
             0b01 => {
                 match (instruction >> 2) & 0b_0000_0111 {
-                    0b000 => Self::get_indirect_x(cpu, memory),
-                    0b001 => Self::get_zpg(cpu, memory),
-                    0b010 => Self::get_imm(cpu, memory),
-                    0b011 => Self::get_abs(cpu, memory),
-                    0b100 => Self::get_indirect_y(cpu, memory),
-                    0b101 => Self::get_zpgx(cpu, memory),
-                    0b110 => Self::get_absx(cpu, memory),
-                    0b111 => Self::get_absy(cpu, memory),
+                    0b000 => MemoryMode::IndirectX,
+                    0b001 => MemoryMode::ZeroPage,
+                    0b010 => MemoryMode::Immediate,
+                    0b011 => MemoryMode::Absolute,
+                    0b100 => MemoryMode::IndirectY,
+                    0b101 => MemoryMode::ZeroPageX,
+                    0b110 => MemoryMode::AbsoluteX,
+                    0b111 => MemoryMode::AbsoluteY,
                     _ => panic!("index out of bounds"),
                 }
             },
             0b10 => {
                 match instruction { // Non standard instructions
-                    0x96 => return Self::get_zpgy(cpu, memory),
-                    0xB6 => return Self::get_zpgy(cpu, memory),
-                    0xBE => return Self::get_absy(cpu, memory),
+                    0x96 => return MemoryMode::ZeroPageY,
+                    0xB6 => return MemoryMode::ZeroPageY,
+                    0xBE => return MemoryMode::AbsoluteY,
                     _ => ()
                 };
                 match (instruction >> 2) & 0b_0000_0111 {
-                    0b000 => Self::get_imm(cpu, memory),
-                    0b001 => Self::get_zpg(cpu, memory),
-                    0b010 => Self::get_acc(cpu, memory),
-                    0b011 => Self::get_abs(cpu, memory),
+                    0b000 => MemoryMode::Immediate,
+                    0b001 => MemoryMode::ZeroPage,
+                    0b010 => MemoryMode::Acc,
+                    0b011 => MemoryMode::Absolute,
                     0b100 => panic!(),
-                    0b101 => Self::get_zpgx(cpu, memory),
+                    0b101 => MemoryMode::ZeroPageX,
                     0b110 => panic!(),
-                    0b111 => Self::get_absx(cpu, memory),
+                    0b111 => MemoryMode::AbsoluteX,
                     _ => panic!("index out of bounds"),
                 }
             }
             0b00 => {
                 match instruction { // Non standard instructions
-                    0x6C => return Self::get_indirect(cpu, memory),
+                    0x6C => return MemoryMode::Indirect,
                     _ => ()
                 };
                 match (instruction >> 2) & 0b_0000_0111 {
-                    0b000 => Self::get_imm(cpu, memory),
-                    0b001 => Self::get_zpg(cpu, memory),
+                    0b000 => MemoryMode::Immediate,
+                    0b001 => MemoryMode::ZeroPage,
                     0b010 => panic!(),
-                    0b011 => Self::get_abs(cpu, memory),
-                    0b100 => Self::get_rel(cpu, memory), // all the branch instructions
-                    0b101 => Self::get_zpgx(cpu, memory),
+                    0b011 => MemoryMode::Absolute,
+                    0b100 => MemoryMode::Relative, // all the branch instructions
+                    0b101 => MemoryMode::ZeroPageX,
                     0b110 => panic!(),
-                    0b111 => Self::get_absx(cpu, memory),
+                    0b111 => MemoryMode::AbsoluteX,
                     _ => panic!("index out of bounds"),
                 }
             }
@@ -207,7 +207,7 @@ impl Instruction {
     pub fn get_abs(cpu: &CPU, memory: &mut MEM) -> Self {
         let (instruction, operand1, operand2) = cpu.get_instr_and_operands(memory);
         let memory_address = combine_operands(operand1, operand2);
-        let value = memory.read(memory_address as usize, 1) as u8;
+        let value = memory.read_no_hook(memory_address as usize, 1) as u8;
         return Self { mode: Absolute, instruction, operand1: Some(operand1), operand2: Some(operand2), value: Some(value), memory_address: Some(memory_address), memory_indirect_address: None }
     }
 
@@ -215,7 +215,7 @@ impl Instruction {
         let (instruction, operand1, operand2) = cpu.get_instr_and_operands(memory);
         let memory_address = combine_operands(operand1, operand2);
         let offsetted_memory_address = (Wrapping::<u16>(memory_address) + Wrapping::<u16>(cpu.get_x() as u16)).0;
-        let value = memory.read(offsetted_memory_address as usize, 1) as u8;
+        let value = memory.read_no_hook(offsetted_memory_address as usize, 1) as u8;
         return Self { mode: AbsoluteX, instruction, operand1: Some(operand1), operand2: Some(operand2), value: Some(value), memory_address: Some(offsetted_memory_address), memory_indirect_address: None }
     }
 
@@ -223,7 +223,7 @@ impl Instruction {
         let (instruction, operand1, operand2) = cpu.get_instr_and_operands(memory);
         let memory_address = combine_operands(operand1, operand2);
         let offsetted_memory_address = (Wrapping::<u16>(memory_address) + Wrapping::<u16>(cpu.get_y() as u16)).0;
-        let value = memory.read(offsetted_memory_address as usize, 1) as u8;
+        let value = memory.read_no_hook(offsetted_memory_address as usize, 1) as u8;
         return Self { mode: AbsoluteY, instruction, operand1: Some(operand1), operand2: Some(operand2), value: Some(value), memory_address: Some(offsetted_memory_address), memory_indirect_address: None }
     }
 
@@ -249,7 +249,7 @@ impl Instruction {
         let memory_low_byte_address = memory.read((Wrapping::<u8>(memory_indirect_address) + Wrapping::<u8>(cpu.get_x())).0 as usize, 1) as u16;
         let memory_high_byte_address = memory.read((Wrapping::<u8>(memory_indirect_address) + Wrapping::<u8>(cpu.get_x()) + Wrapping::<u8>(1)).0 as usize, 1) as u16;
         let memory_address = (memory_high_byte_address << 8) + memory_low_byte_address;
-        let value = memory.read(memory_address as usize, 1) as u8;
+        let value = memory.read_no_hook(memory_address as usize, 1) as u8;
         return Self { mode: IndirectX, instruction, operand1: Some(memory_indirect_address), operand2: None, value: Some(value), memory_address: Some(memory_address), memory_indirect_address: Some(memory_indirect_address) }
     }
 
@@ -259,7 +259,14 @@ impl Instruction {
         let memory_high_byte_address = memory.read((Wrapping::<u8>(memory_indirect_address) + Wrapping::<u8>(1)).0 as usize, 1) as u16;
         let memory_address = ((memory_high_byte_address << 8) + memory_low_byte_address) as u16;
         let offsetted_memory_address = (Wrapping::<u16>(memory_address) + Wrapping::<u16>(cpu.get_y() as u16)).0;
-        let value = memory.read(offsetted_memory_address as usize, 1) as u8;
+        let value = memory.read_no_hook(offsetted_memory_address as usize, 1) as u8;
         return Self { mode: IndirectY, instruction, operand1: Some(memory_indirect_address), operand2: None, value: Some(value), memory_address: Some(offsetted_memory_address), memory_indirect_address: Some(memory_indirect_address) }
+    }
+
+    pub fn read(&self, memory: &mut MEM) -> u8 {
+        match self.memory_address {
+            Some(addr) => memory.read(addr as usize, 1) as u8,
+            None => self.value.unwrap(), // this is ugly, but this is a quick fix for invalid read hooks on write operations
+        }
     }
 }

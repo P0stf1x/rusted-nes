@@ -16,8 +16,8 @@ impl CPU {
 }
 
 macro_rules! ldx {
-    ($cpu:ident, $instruction:ident) => {{
-        let value = $instruction.value.unwrap();
+    ($cpu:ident, $instruction:ident, $memory:ident) => {{
+        let value = $instruction.read($memory);
         $cpu.store_x(value);
         $cpu.Z = $cpu.get_x() == 0;
         $cpu.N = $cpu.get_x() & 0b_1000_0000 != 0;
@@ -29,35 +29,35 @@ impl CPU {
     fn execute_ldx_imm(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_imm(&self, memory);
         inst.log(&self, "LDX");
-        ldx!(self, inst);
+        ldx!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_ldx_zpg(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_zpg(&self, memory);
         inst.log(&self, "LDX");
-        ldx!(self, inst);
+        ldx!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_ldx_zpgy(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_zpgy(&self, memory);
         inst.log(&self, "LDX");
-        ldx!(self, inst);
+        ldx!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_ldx_abs(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_abs(&self, memory);
         inst.log(&self, "LDX");
-        ldx!(self, inst);
+        ldx!(self, inst, memory);
         self.increment_pc(3);
     }
 
     fn execute_ldx_absy(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_absy(&self, memory);
         inst.log(&self, "LDX");
-        ldx!(self, inst);
+        ldx!(self, inst, memory);
         self.increment_pc(3);
     }
 }
@@ -84,7 +84,7 @@ mod ldx_tests {
         assert_eq!(test_cpu.N, false);
         assert_eq!(test_cpu.PC.0, 0x0002);
     }
-    
+
     #[test]
     fn test_lnx_immediate_negative() {
         let mut test_cpu: CPU = CPU::new();
@@ -102,7 +102,7 @@ mod ldx_tests {
         assert_eq!(test_cpu.N, true);
         assert_eq!(test_cpu.PC.0, 0x0002);
     }
-    
+
     #[test]
     fn test_lnx_immediate_zero() {
         let mut test_cpu: CPU = CPU::new();
@@ -121,7 +121,7 @@ mod ldx_tests {
         assert_eq!(test_cpu.N, false);
         assert_eq!(test_cpu.PC.0, 0x0002);
     }
-    
+
     #[test]
     fn test_lnx_zeropage() {
         let mut test_cpu: CPU = CPU::new();
@@ -140,7 +140,7 @@ mod ldx_tests {
         assert_eq!(test_cpu.N, false);
         assert_eq!(test_cpu.PC.0, 0x0002);
     }
-    
+
     #[test]
     fn test_lnx_zeropage_negative() {
         let mut test_cpu: CPU = CPU::new();
@@ -159,7 +159,7 @@ mod ldx_tests {
         assert_eq!(test_cpu.N, true);
         assert_eq!(test_cpu.PC.0, 0x0002);
     }
-    
+
     #[test]
     fn test_lnx_zeropage_zero() {
         let mut test_cpu: CPU = CPU::new();

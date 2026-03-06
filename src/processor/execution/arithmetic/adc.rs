@@ -22,10 +22,11 @@ impl CPU {
 }
 
 macro_rules! adc {
-    ($cpu:ident, $instruction:ident) => {{
-        let carry = ($cpu.get_a() as u16 + $instruction.value.unwrap() as u16) > 0xFF;
+    ($cpu:ident, $instruction:ident, $memory:ident) => {{
+        let value = $instruction.read($memory);
+        let carry = ($cpu.get_a() as u16 + value as u16) > 0xFF;
         let prev_a = $cpu.get_a();
-        $cpu.store_a((Wrapping::<u8>(prev_a) + Wrapping::<u8>($instruction.value.unwrap()) + Wrapping::<u8>($cpu.C as u8)).0);
+        $cpu.store_a((Wrapping::<u8>(prev_a) + Wrapping::<u8>(value) + Wrapping::<u8>($cpu.C as u8)).0);
         $cpu.C = carry;
         $cpu.V = ($cpu.get_a() & 0b_1000_0000) != (prev_a & 0b_1000_0000);
         $cpu.Z = $cpu.get_a() == 0;
@@ -37,56 +38,56 @@ impl CPU {
     fn execute_adc_imm(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_imm(&self, memory);
         inst.log(&self, "ADC");
-        adc!(self, inst);
+        adc!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_adc_zpg(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_zpg(&self, memory);
         inst.log(&self, "ADC");
-        adc!(self, inst);
+        adc!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_adc_zpgx(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_zpgx(&self, memory);
         inst.log(&self, "ADC");
-        adc!(self, inst);
+        adc!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_adc_abs(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_abs(&self, memory);
         inst.log(&self, "ADC");
-        adc!(self, inst);
+        adc!(self, inst, memory);
         self.increment_pc(3);
     }
 
     fn execute_adc_absx(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_absx(&self, memory);
         inst.log(&self, "ADC");
-        adc!(self, inst);
+        adc!(self, inst, memory);
         self.increment_pc(3);
     }
 
     fn execute_adc_absy(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_absy(&self, memory);
         inst.log(&self, "ADC");
-        adc!(self, inst);
+        adc!(self, inst, memory);
         self.increment_pc(3);
     }
 
     fn execute_adc_indirect_x(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_indirect_x(&self, memory);
         inst.log(&self, "ADC");
-        adc!(self, inst);
+        adc!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_adc_indirect_y(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_indirect_x(&self, memory);
         inst.log(&self, "ADC");
-        adc!(self, inst);
+        adc!(self, inst, memory);
         self.increment_pc(2);
     }
 }
