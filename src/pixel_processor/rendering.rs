@@ -29,11 +29,12 @@ impl PPU {
     pub(super) fn render_frame(&mut self) {
         // For now there's only minifb rendering
         // TODO: implement ImGUI rendering
-        for i in 0..32*30 { // Each byte is 8x8 sprite index so in turn we fill 256x240 pixels
-            // TODO: It renders only first plane right now
-            let (tile, tile_palette) = tile::get_tile_and_palette(&self.ppu_memory, i, self.pattern_table_bit_plane, self.x_offset, self.y_offset);
-            overlay_sprite(&mut self.main_framebuffer, &tile.rendered(tile_palette), (i%32)*8, (i/32)*8, 256);
-            render_oam(&mut self.main_framebuffer, &self.oam_data, 256, &self.ppu_memory, self.fg_plane);
+        for x in 0..32 { // Each byte is 8x8 sprite index so in turn we fill 256x240 pixels
+            for y in 0..30 { // Each byte is 8x8 sprite index so in turn we fill 256x240 pixels
+                let (tile, tile_palette) = tile::get_tile_and_palette(&self.ppu_memory, x, y, self.bg_plane, self.x_offset, self.y_offset, self.nametable_address);
+                overlay_sprite(&mut self.main_framebuffer, &tile.rendered(tile_palette), ((x+y*32)%32)*8, ((x+y*32)/32)*8, 256);
+                render_oam(&mut self.main_framebuffer, &self.oam_data, 256, &self.ppu_memory, self.fg_plane);
+            }
         }
         self.main_window
             .update_with_buffer(&self.main_framebuffer, 256, 240)
