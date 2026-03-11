@@ -44,6 +44,7 @@ pub struct PPU {
     oam_data: [u8; 256],
     oam_addr: usize,
     fg_plane: bool,
+    rendered_nametable: Vec<u32>
 }
 
 impl PPU {
@@ -73,6 +74,7 @@ impl PPU {
             oam_data: [0; 256],
             oam_addr: 0,
             fg_plane: false,
+            rendered_nametable: vec![0u32; 32*30*4],
         },
         tx)
     }
