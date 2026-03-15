@@ -1,5 +1,3 @@
-use crate::pixel_processor::helper::{get_tile_addr, get_tile_and_palette_addr};
-
 use super::PPU_MEM;
 
 #[derive(Clone, Copy)]
@@ -12,10 +10,10 @@ pub enum PixelPaletteColorIndex {
 
 #[derive(Clone, Copy)]
 pub struct PixelPalette {
-    background: u32,
-    color1: u32,
-    color2: u32,
-    color3: u32,
+    pub background: u32,
+    pub color1: u32,
+    pub color2: u32,
+    pub color3: u32,
 }
 
 impl PixelPalette {
@@ -29,13 +27,17 @@ impl PixelPalette {
         };
     }
 
-    pub fn get(ppu_memory: &PPU_MEM, x: usize, y: usize, nametable_address: usize) -> Self {
-        let tile_attribute_x = x % 4;
-        let tile_attribute_y = y % 4;
-        let attribute_byte_offset = (x / 4) + (y / 4 * 8);
-        let attribute_byte = ppu_memory.read(nametable_address + attribute_byte_offset, 1);
+    pub fn get_from_addr_and_offset(ppu_memory: &PPU_MEM, nametable_address: usize, tile_offset: usize) -> Self {
+        let tile_attribute_x = (tile_offset & 0b_0000_0010) >> 1;
+        let tile_attribute_y = (tile_offset & 0b_0100_0000) >> 6;
 
-        let palette_index = match (tile_attribute_x/2, tile_attribute_y/2) {
+        let attribute_byte_x_part = (tile_offset & 0b_0000_0001_1100) >> 2;
+        let attribute_byte_y_part = (tile_offset & 0b_0011_1000_0000) >> 4;
+        let attribute_byte_offset = attribute_byte_x_part + attribute_byte_y_part;
+
+        let attribute_byte = ppu_memory.read(nametable_address + 0x3C0 + attribute_byte_offset, 1);
+
+        let palette_index = match (tile_attribute_x, tile_attribute_y) {
             (0, 0) => attribute_byte & 0b_0000_0011,
             (1, 0) => (attribute_byte & 0b_0000_1100) >> 2,
             (0, 1) => (attribute_byte & 0b_0011_0000) >> 4,
@@ -143,31 +145,4 @@ impl Tile {
         };
         return rendered;
     }
-}
-
-pub fn get_tile_and_palette(ppu_memory: &PPU_MEM, x: usize, y: usize, plane1: bool, x_offset: usize, y_offset: usize, nametable_address: usize) -> (Tile, PixelPalette) {
-    let x_tile_offset = (x_offset & 0b_1111_1000) >> 3; // no sub tile offset
-    let y_tile_offset = ((y_offset & 0b_1111_1000) >> 3) * 64;
-    let (tile_addr, palette_addr) = get_tile_and_palette_addr(x + x_tile_offset, y + y_tile_offset, nametable_address);
-    let tile_pattern_id = ppu_memory.read(tile_addr, 1);
-    let tile = Tile::get(ppu_memory, tile_pattern_id, plane1);
-    let palette = PixelPalette::get(ppu_memory, x, y, palette_addr);
-    return (tile, palette);
-}
-
-pub fn get_bg_at_pixel(ppu_memory: &PPU_MEM, x: usize, y: usize, plane1: bool, x_offset: usize, y_offset: usize, nametable_address: usize) -> u32 {
-    let tile_addr = get_tile_addr(x + x_offset, y + y_offset, nametable_address);
-    let (_, palette_addr) = get_tile_and_palette_addr(x + x_offset, y + y_offset, nametable_address);
-    let tile_pattern_id = ppu_memory.read(tile_addr, 1);
-    // let tile = Tile::get(ppu_memory, tile_pattern_id, plane1);
-    // let pixel_colour = tile.at((x + x_offset) & 0b_0000_0111, (y + y_offset) & 0b_0000_0111);
-    let pixel_color = Tile::get_at(ppu_memory, (x+x_offset)&0b_0000_0111, (y+y_offset)&0b_0000_0111, tile_pattern_id, plane1);
-    let palette = PixelPalette::get(ppu_memory, x, y, palette_addr);
-    let color = match pixel_color {
-        PixelPaletteColorIndex::Background => palette.background,
-        PixelPaletteColorIndex::Color1 => palette.color1,
-        PixelPaletteColorIndex::Color2 => palette.color2,
-        PixelPaletteColorIndex::Color3 => palette.color3,
-    };
-    return color;
 }

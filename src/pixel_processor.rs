@@ -92,8 +92,14 @@ impl PPU {
 
             if self.dot > 89341.5 {
                 self.dot -= 89341.5;
-                self.render_frame();
+                self.render_oam();
+                self.display_frame();
                 if self.pattern_table_window.is_open() { self.render_pattern_table(); } // If pattern table is open - we also render it
+            }
+
+            let (line, dot) = self.get_line_dot();
+            if line < 240 && dot < 256 && dot.rem_euclid(8) == 7 /* last dot of 8 long slice */ {
+                self.render_bg_slice(line, dot/8);
             }
 
             if self.get_line_dot() == (241, 1) {

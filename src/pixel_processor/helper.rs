@@ -10,55 +10,24 @@ pub fn overlay_sprite(screen: &mut [u32], sprite: &[u32], offset_x: usize, offse
     }
 }
 
-pub fn get_tile_and_palette_addr(x: usize, y: usize, nametable_address: usize) -> (usize, usize) {
+pub fn get_actual_nametable_addr_and_tile_offset(x: usize, y: usize, nametable_address: usize) -> (usize, usize) {
     let mut tile_base_offset = nametable_address;
-    match nametable_address {
-        0x2000 => {
-            if x >= 32 { tile_base_offset += 0x400 };
-            if y >= 30 { tile_base_offset += 0x800 };
-        },
-        0x2400 => {
-            if x >= 32 { tile_base_offset -= 0x400 };
-            if y >= 30 { tile_base_offset += 0x800 };
-        },
-        0x2800 => {
-            if x >= 32 { tile_base_offset += 0x400 };
-            if y >= 30 { tile_base_offset -= 0x800 };
-        },
-        0x2C00 => {
-            if x >= 32 { tile_base_offset -= 0x400 };
-            if y >= 30 { tile_base_offset -= 0x800 };
-        },
-        addr => panic!("Nametable address is not valid: 0x{:04X}", addr),
-    }
-    let palette_base_offset = tile_base_offset + 0x3C0;
-    let local_x = x.rem_euclid(32);
-    let local_y = y.rem_euclid(30);
-    return (tile_base_offset + local_x + local_y*32, palette_base_offset);
-}
+    let horizontal_offset = (x / (32*8)).rem_euclid(2) * 0x400;
+    let vertical_offset = (y / (30*8)).rem_euclid(2) * 0x800;
 
-pub fn get_tile_addr(x: usize, y: usize, nametable_address: usize) -> usize {
-    let mut tile_base_offset = nametable_address;
-    match nametable_address {
-        0x2000 => {
-            if x >= 32 { tile_base_offset += 0x400 };
-            if y >= 30 { tile_base_offset += 0x800 };
-        },
-        0x2400 => {
-            if x >= 32 { tile_base_offset -= 0x400 };
-            if y >= 30 { tile_base_offset += 0x800 };
-        },
-        0x2800 => {
-            if x >= 32 { tile_base_offset += 0x400 };
-            if y >= 30 { tile_base_offset -= 0x800 };
-        },
-        0x2C00 => {
-            if x >= 32 { tile_base_offset -= 0x400 };
-            if y >= 30 { tile_base_offset -= 0x800 };
-        },
-        addr => panic!("Nametable address is not valid: 0x{:04X}", addr),
+    if nametable_address == 0x2000 || nametable_address == 0x2800 {
+        tile_base_offset += horizontal_offset; // left half
+    } else {
+        tile_base_offset -= horizontal_offset; // right half
     }
+
+    if nametable_address == 0x2000 || nametable_address == 0x2400 {
+        tile_base_offset += vertical_offset; // upper half
+    } else {
+        tile_base_offset -= vertical_offset; // lower half
+    }
+
     let tile_x = (x/8).rem_euclid(32);
     let tile_y = (y/8).rem_euclid(30);
-    return tile_base_offset + tile_x + tile_y*32;
+    return (tile_base_offset, tile_x + tile_y*32);
 }
