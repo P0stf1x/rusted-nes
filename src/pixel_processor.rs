@@ -44,7 +44,7 @@ pub struct PPU {
     oam_data: [u8; 256],
     oam_addr: usize,
     fg_plane: bool,
-    rendered_nametable: Vec<u32>
+    frame_start: Instant,
 }
 
 impl PPU {
@@ -74,7 +74,7 @@ impl PPU {
             oam_data: [0; 256],
             oam_addr: 0,
             fg_plane: false,
-            rendered_nametable: vec![0u32; 32*30*4],
+            frame_start: Instant::now(),
         },
         tx)
     }
@@ -94,6 +94,7 @@ impl PPU {
                 self.dot -= 89341.5;
                 self.render_oam();
                 self.display_frame();
+                self.wait_for_next_frame();
                 if self.pattern_table_window.is_open() { self.render_pattern_table(); } // If pattern table is open - we also render it
             }
 

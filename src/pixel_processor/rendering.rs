@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use minifb::{ Window, WindowOptions };
 
 use crate::pixel_processor::tile::PixelPalette;
@@ -103,5 +105,14 @@ impl PPU {
             window_options
         ).unwrap();
         return pattern_table_window;
+    }
+
+    pub(super) fn wait_for_next_frame(&mut self) {
+        loop { // calling sleep() is not guaranteed to sleep exactly specified time, only AT LEAST specified time or more
+            if self.frame_start.elapsed().as_nanos() > 16_666_666 {
+                self.frame_start = Instant::now();
+                break;
+            }
+        }
     }
 }

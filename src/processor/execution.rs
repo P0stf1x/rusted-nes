@@ -36,7 +36,6 @@ impl CPU {
         self.cycle_count += 1.;
         if self.cycle_count >= 29780.5 {
             self.cycle_count -= 29780.5;
-            self.sleep(29780);
         };
         match self.cpu_state {
             CpuState::Ready => {
