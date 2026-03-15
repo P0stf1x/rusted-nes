@@ -23,9 +23,11 @@ impl PPU {
             // let oam_tile_plane = oam_data[oam_sprite_id*4+1] & 0x01 == 0; // only in 8x16
             // let oam_tile_id = oam_data[oam_sprite_id*4+1] >> 1;
             let oam_tile_id = self.oam_data[oam_sprite_id*4+1];
+            let reverse_h = self.oam_data[oam_sprite_id*4+2] & 0b_0100_0000 != 0;
+            let reverse_v = self.oam_data[oam_sprite_id*4+2] & 0b_1000_0000 != 0;
             let oam_palette_id = 4 + (self.oam_data[oam_sprite_id*4+2] & 0b_0000_0011) as usize;
             let palette = PixelPalette::get_by_id(&self.ppu_memory, oam_palette_id);
-            let tile = Tile::get(&self.ppu_memory, oam_tile_id as usize, self.fg_plane);
+            let tile = Tile::get(&self.ppu_memory, oam_tile_id as usize, self.fg_plane, reverse_h, reverse_v);
             let sprite = tile.rendered(palette);
             for y in 0..8 {     // assume sprite is always 8x8
                 for x in 0..8 {
@@ -59,7 +61,7 @@ impl PPU {
             for y in 0..16 {
                 for x in 0..16 {
                     let tile_palette = tile::PixelPalette::get_sample_palette();
-                    let tile = &Tile::get(&self.ppu_memory, x+y*8, bit_plane!=0).rendered(tile_palette);
+                    let tile = &Tile::get(&self.ppu_memory, x+y*8, bit_plane!=0, false, false).rendered(tile_palette);
                     overlay_sprite(&mut self.pattern_table_framebuffer, tile, x*8+bit_plane*128, y*8, 256);
                 }
             }

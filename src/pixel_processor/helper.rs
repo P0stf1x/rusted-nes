@@ -31,3 +31,25 @@ pub fn get_actual_nametable_addr_and_tile_offset(x: usize, y: usize, nametable_a
     let tile_y = (y/8).rem_euclid(30);
     return (tile_base_offset, tile_x + tile_y*32);
 }
+
+pub fn reverse_bits(value: u8) -> u8 {
+    #[cfg(target_arch = "aarch64")]
+    {
+        let mut result: u8 = 0;
+        unsafe {
+            std::arch::asm!(
+                "rbit {res:x}, {val:x}",
+                "lsr {res:x}, {res:x}, #56",
+                options(nostack),
+                val = in(reg) value,
+                res = lateout(reg) result,
+            );
+        };
+        return result;
+    }
+
+    #[cfg(not(target_arch = "aarch64"))]
+    {
+        ((((value as u64) * 0x0202020202) & 0x010884422010) % 1023) as u8
+    }
+}

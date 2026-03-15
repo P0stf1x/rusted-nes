@@ -1,3 +1,5 @@
+use crate::pixel_processor::helper::reverse_bits;
+
 use super::PPU_MEM;
 
 #[derive(Clone, Copy)]
@@ -79,29 +81,42 @@ pub struct Tile {
 }
 
 impl Tile {
-    pub fn get(ppu_memory: &PPU_MEM, tile_pattern_id: usize, plane1: bool) -> Self {
+    pub fn get(ppu_memory: &PPU_MEM, tile_pattern_id: usize, plane1: bool, reverse_h: bool, reverse_v: bool) -> Self {
         let mut data = [PixelPaletteColorIndex::Background; 64];
-        for i in 0..64 {
-            let lsb_strip_address = (
-                if plane1 {0b_0001_0000_0000_0000} else {0} +
-                (tile_pattern_id << 4) +
-                0b_0000 +      // bit plane offset
-                (i / 8)        // strip offset
-            );
-            let msb_strip_address = (
-                if plane1 {0b_0001_0000_0000_0000} else {0} +
-                (tile_pattern_id << 4) +
-                0b_1000 +      // bit plane offset
-                (i / 8)        // strip offset
-            );
-            let bit_offset = 0b_1000_0000 >> i%8;
-            let lsb = (ppu_memory.read(lsb_strip_address, 1) & bit_offset) != 0;
-            let msb = (ppu_memory.read(msb_strip_address, 1) & bit_offset) != 0;
-            data[i] = match (msb, lsb) {
-                (false, false) => PixelPaletteColorIndex::Background,
-                (false,  true) => PixelPaletteColorIndex::Color1,
-                ( true, false) => PixelPaletteColorIndex::Color2,
-                ( true,  true) => PixelPaletteColorIndex::Color3,
+        for y in 0..8 {
+            let reverse_aware_y = if reverse_v {
+                7-y
+            } else {
+                y
+            };
+            for x in 0..8 {
+                let lsb_strip_address = (
+                    if plane1 {0b_0001_0000_0000_0000} else {0} +
+                    (tile_pattern_id << 4) +
+                    0b_0000 +       // bit plane offset
+                    reverse_aware_y // strip offset
+                );
+                let msb_strip_address = (
+                    if plane1 {0b_0001_0000_0000_0000} else {0} +
+                    (tile_pattern_id << 4) +
+                    0b_1000 +       // bit plane offset
+                    reverse_aware_y // strip offset
+                );
+                let bit_offset = 0b_1000_0000 >> x;
+                let mut lsb_value = ppu_memory.read(lsb_strip_address, 1) as u8;
+                let mut msb_value = ppu_memory.read(msb_strip_address, 1) as u8;
+                if reverse_h {
+                    lsb_value = reverse_bits(lsb_value);
+                    msb_value = reverse_bits(msb_value);
+                }
+                let lsb = (lsb_value & bit_offset) != 0;
+                let msb = (msb_value & bit_offset) != 0;
+                data[x + y*8] = match (msb, lsb) {
+                    (false, false) => PixelPaletteColorIndex::Background,
+                    (false,  true) => PixelPaletteColorIndex::Color1,
+                    ( true, false) => PixelPaletteColorIndex::Color2,
+                    ( true,  true) => PixelPaletteColorIndex::Color3,
+                };
             };
         };
         return Tile {
