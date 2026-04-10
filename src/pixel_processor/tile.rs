@@ -48,7 +48,7 @@ impl PixelPalette {
         };
         let palette = ppu_memory.read(0x3F00 + palette_index*4, 4);
         return Self {
-            background: get_color(palette as u8),
+            background: get_color(ppu_memory.read(0x3F00, 1) as u8),
             color1: get_color((palette>>8) as u8),
             color2: get_color((palette>>16) as u8),
             color3: get_color((palette>>24) as u8),
