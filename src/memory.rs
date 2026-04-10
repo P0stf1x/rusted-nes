@@ -153,29 +153,35 @@ pub struct MEM {
 
 // Read/Write
 impl MEM {
-    pub fn read(&self, address: usize, size: usize) -> usize {
+    fn read_internal(&self, address: usize, size: usize, send_hooks: bool) -> usize {
         let mut result: usize = 0;
         for i in 0..size {
             let mirrored_address = self.get_mirrored_address(address+i);
             let value = self.data[mirrored_address];
-            for hook in self.get_hooks(MemoryOperation::Read, mirrored_address) {
-                hook.send(mirrored_address, value);
-            };
+            if send_hooks {
+                for hook in self.get_hooks(MemoryOperation::Read, mirrored_address) {
+                    hook.send(mirrored_address, value);
+                };
+            }
             result += (value as usize) << 8*i
         }
         return result;
     }
 
+    pub fn read(&self, address: usize, size: usize) -> usize {
+        self.read_internal(address, size, true)
+    }
+
     pub fn read_no_hook(&mut self, address: usize, size: usize) -> usize {
-        self.read(address, size)
+        self.read_internal(address, size, false)
     }
 
     pub fn write(&mut self, address: usize, data: u8) {
         for hook in self.get_hooks(MemoryOperation::Write, address) {
             hook.send(address, data);
         };
-        if !self.is_protected(address) { // or should it check mirrored address?
-            let mirrored_address = self.get_mirrored_address(address);
+        let mirrored_address = self.get_mirrored_address(address);
+        if !self.is_protected(mirrored_address) {
             self.data[mirrored_address] = data;
         }
     }
