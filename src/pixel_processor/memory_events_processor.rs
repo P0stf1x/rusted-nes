@@ -14,6 +14,16 @@ impl PPU {
                         self.ppudata_write_down = value & 0b_0000_0100 != 0;
                         self.nametable_address = 0x2000 + ((value & 0b_0000_0011) as usize * 0x400);
                     }
+                    MemoryEvent {operation: Write, address: 0x2001, value} => { // PPUMASK
+                        // self.emphasize_b = value & 0b_1000_0000 != 0;
+                        // self.emphasize_g = value & 0b_0100_0000 != 0;
+                        // self.emphasize_r = value & 0b_0010_0000 != 0;
+                        self.fg_rendering = value & 0b_0001_0000 != 0;
+                        self.bg_rendering = value & 0b_0000_1000 != 0;
+                        // self.fg_left_rendering = value & 0b_0000_0100 != 0;
+                        // self.bg_left_rendering = value & 0b_0000_0010 != 0;
+                        // self.greyscale_rendering = value & 0b_0000_0001 != 0;
+                    }
                     MemoryEvent {operation: Read, address: 0x2002, value} => { // PPUSTATUS
                         self.clear_vblank();
                         self.ppu_addr_high_byte = true;

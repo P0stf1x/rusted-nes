@@ -45,6 +45,8 @@ pub struct PPU {
     oam_addr: usize,
     fg_plane: bool,
     frame_start: Instant,
+    fg_rendering: bool,
+    bg_rendering: bool,
 }
 
 impl PPU {
@@ -75,6 +77,8 @@ impl PPU {
             oam_addr: 0,
             fg_plane: false,
             frame_start: Instant::now(),
+            fg_rendering: false,
+            bg_rendering: false,
         },
         tx)
     }
@@ -92,15 +96,21 @@ impl PPU {
 
             if self.dot > 89341.5 {
                 self.dot -= 89341.5;
-                self.render_oam();
+                if self.fg_rendering {
+                    self.render_oam();
+                }
                 self.display_frame();
                 self.wait_for_next_frame();
                 if self.pattern_table_window.is_open() { self.render_pattern_table(); } // If pattern table is open - we also render it
             }
 
-            let (line, dot) = self.get_line_dot();
-            if line < 240 && dot < 256 && dot.rem_euclid(8) == 7 /* last dot of 8 long slice */ {
-                self.render_bg_slice(line, dot/8);
+            if self.bg_rendering {
+                let (line, dot) = self.get_line_dot();
+                if line < 240 && dot < 256 {
+                    if dot.rem_euclid(8) == 7 /* last dot of 8 long slice */ {
+                        self.render_bg_slice(line, dot/8);
+                    }
+                }
             }
 
             if self.get_line_dot() == (241, 1) {
