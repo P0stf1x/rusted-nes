@@ -77,7 +77,7 @@ fn get_color(index: u8) -> u32 {
 }
 
 pub struct Tile {
-    data: [PixelPaletteColorIndex; 64]
+    pub data: [PixelPaletteColorIndex; 64]
 }
 
 impl Tile {
@@ -124,22 +124,29 @@ impl Tile {
         };
     }
 
-    pub fn get_at(ppu_memory: &PPU_MEM, x: usize, y: usize, tile_pattern_id: usize, plane1: bool) -> PixelPaletteColorIndex {
+    pub fn get_at(ppu_memory: &PPU_MEM, x: usize, y: usize, tile_pattern_id: usize, plane1: bool, reverse_h: bool, reverse_v: bool) -> PixelPaletteColorIndex {
+        let reverse_aware_y = if reverse_v { 7-y } else { y };
         let lsb_strip_address = (
             if plane1 {0b_0001_0000_0000_0000} else {0} +
             (tile_pattern_id << 4) +
-            0b_0000 +      // bit plane offset
-            y              // strip offset
+            0b_0000 +       // bit plane offset
+            reverse_aware_y // strip offset
         );
         let msb_strip_address = (
             if plane1 {0b_0001_0000_0000_0000} else {0} +
             (tile_pattern_id << 4) +
-            0b_1000 +      // bit plane offset
-            y              // strip offset
+            0b_1000 +       // bit plane offset
+            reverse_aware_y // strip offset
         );
         let bit_offset = 0b_1000_0000 >> x;
-        let lsb = (ppu_memory.read(lsb_strip_address, 1) & bit_offset) != 0;
-        let msb = (ppu_memory.read(msb_strip_address, 1) & bit_offset) != 0;
+        let mut lsb_value = ppu_memory.read(lsb_strip_address, 1) as u8;
+        let mut msb_value = ppu_memory.read(msb_strip_address, 1) as u8;
+        if reverse_h {
+            lsb_value = reverse_bits(lsb_value);
+            msb_value = reverse_bits(msb_value);
+        }
+        let lsb = (lsb_value & bit_offset) != 0;
+        let msb = (msb_value & bit_offset) != 0;
         match (msb, lsb) {
             (false, false) => PixelPaletteColorIndex::Background,
             (false,  true) => PixelPaletteColorIndex::Color1,

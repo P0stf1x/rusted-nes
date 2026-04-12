@@ -19,6 +19,93 @@ pub struct CPUPtrWrapper(pub *mut crate::CPU);
 unsafe impl Sync for CPUPtrWrapper {}
 unsafe impl Send for CPUPtrWrapper {}
 
+#[derive(Clone, Copy)]
+pub struct PPUVramAddr(u16);
+
+impl PPUVramAddr {
+    pub fn set_all(&mut self, value: u16) {
+        self.0 = value & 0b0111_1111_1111_1111;
+    }
+
+    pub fn get_all(&self) -> u16 {
+        return self.0;
+    }
+
+    pub fn set_coarse_x(&mut self, value: u8) {
+        self.0 &= !0x1F;
+        self.0 += (value & 0x1F) as u16;
+    }
+
+    pub fn get_coarse_x(&self) -> u8 {
+        return (self.0 & 0x1F) as u8;
+    }
+
+    pub fn set_coarse_y(&mut self, value: u8) {
+        self.0 &= !(0x1F << 5);
+        self.0 += ((value & 0x1F) as u16) << 5;
+    }
+
+    pub fn get_coarse_y(&self) -> u8 {
+        return ((self.0 >> 5) & 0x1F) as u8;
+    }
+
+    pub fn set_nametable_h(&mut self, value: bool) {
+        if value {
+            self.0 |= 0b_0000_0100_0000_0000;
+        } else {
+            self.0 &= 0b_1111_1011_1111_1111;
+        }
+    }
+
+    pub fn get_nametable_h(&self) -> bool {
+        return self.0 & 0b_0000_0100_0000_0000 != 0;
+    }
+
+    pub fn set_nametable_v(&mut self, value: bool) {
+        if value {
+            self.0 |= 0b_0000_1000_0000_0000;
+        } else {
+            self.0 &= 0b_1111_0111_1111_1111;
+        }
+    }
+
+    pub fn get_nametable_v(&self) -> bool {
+        return self.0 & 0b_0000_1000_0000_0000 != 0;
+    }
+
+    pub fn set_fine_y(&mut self, value: u8) {
+        self.0 &= !(0x7 << 12);
+        self.0 += ((value & 0x7) as u16) << 12;
+    }
+
+    pub fn get_fine_y(&self) -> u8 {
+        return ((self.0 >> 12) & 0x7) as u8;
+    }
+
+    pub fn increment_x(&mut self) {
+        self.set_coarse_x(self.get_coarse_x() + 1);
+        if self.get_coarse_x() == 0 {
+            self.set_nametable_h(!self.get_nametable_h());
+        }
+    }
+
+    pub fn increment_y(&mut self) {
+        self.set_fine_y(self.get_fine_y() + 1);
+        if self.get_fine_y() == 0 {
+            let mut y = self.get_coarse_y();
+            if y == 29 {
+                y = 0;
+                self.set_nametable_v(!self.get_nametable_v());
+            } else if y == 31 {
+                y = 0;
+            } else {
+                y += 1
+            }
+            self.set_coarse_y(y);
+        }
+    }
+}
+
 pub struct PPU {
     memory_pointer: MemPtrWrapper,
     #[allow(unused)]
@@ -35,11 +122,10 @@ pub struct PPU {
     nmi_enabled: bool,
     bg_plane: bool,
     ppudata_write_down: bool,
-    nametable_address: usize,
     ppu_addr_high_byte: bool,
-    ppu_addr: usize,
-    x_offset: usize,
-    y_offset: usize,
+    vram_v: PPUVramAddr,
+    vram_t: PPUVramAddr,
+    fine_x: u8,
     controller_state: u8,
     oam_data: [u8; 256],
     oam_addr: usize,
@@ -67,11 +153,10 @@ impl PPU {
             nmi_enabled: true,
             bg_plane: false,
             ppudata_write_down: false,
-            nametable_address: 0x2000,
             ppu_addr_high_byte: true,
-            ppu_addr: 0x0000,
-            x_offset: 0,
-            y_offset: 0,
+            vram_v: PPUVramAddr(0),
+            vram_t: PPUVramAddr(0),
+            fine_x: 0,
             controller_state: 0,
             oam_data: [0; 256],
             oam_addr: 0,
@@ -106,10 +191,39 @@ impl PPU {
 
             if self.bg_rendering {
                 let (line, dot) = self.get_line_dot();
-                if line < 240 && dot < 256 {
-                    if dot.rem_euclid(8) == 7 /* last dot of 8 long slice */ {
-                        self.render_bg_slice(line, dot/8);
+                if (line < 240 || line == 261) && 0 < dot && dot <= 256 {
+                    if dot.rem_euclid(8) == 0 /* last dot of 8 long slice starting from 1 */ {
+                            if line != 261 { // line -1/261 is not used
+                                self.render_current_vram_slice();
+                            }
+                            self.vram_v.increment_x();
+                            if dot == 256 {
+                                self.vram_v.increment_y();
+                            }
                     }
+                }
+            }
+
+            if self.bg_rendering || self.fg_rendering {
+                match self.get_line_dot() {
+                    (0..240 | 261, 257) => {
+                        // Copying horizontal vram_t to vram_v
+                        self.vram_v.set_coarse_x(self.vram_t.get_coarse_x());
+                        self.vram_v.set_nametable_h(self.vram_t.get_nametable_h());
+                    },
+                    _ => (),
+                }
+            }
+
+            if self.bg_rendering || self.fg_rendering {
+                match self.get_line_dot() {
+                    (261, 280..=304) => {
+                        // Copying vertical vram_t to vram_v
+                        self.vram_v.set_coarse_y(self.vram_t.get_coarse_y());
+                        self.vram_v.set_nametable_v(self.vram_t.get_nametable_v());
+                        self.vram_v.set_fine_y(self.vram_t.get_fine_y());
+                    }
+                    _ => (),
                 }
             }
 

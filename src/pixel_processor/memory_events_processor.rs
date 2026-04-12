@@ -12,7 +12,8 @@ impl PPU {
                         self.bg_plane = value & 0b_0001_0000 != 0;
                         self.fg_plane = value & 0b_0000_1000 != 0;
                         self.ppudata_write_down = value & 0b_0000_0100 != 0;
-                        self.nametable_address = 0x2000 + ((value & 0b_0000_0011) as usize * 0x400);
+                        self.vram_t.set_nametable_v((value & 0b_0000_0010) != 0);
+                        self.vram_t.set_nametable_h((value & 0b_0000_0001) != 0);
                     }
                     MemoryEvent {operation: Write, address: 0x2001, value} => { // PPUMASK
                         // self.emphasize_b = value & 0b_1000_0000 != 0;
@@ -47,30 +48,37 @@ impl PPU {
                     },
                     MemoryEvent {operation: Write, address: 0x2005, value} => { // PPUSCROLL
                         if self.ppu_addr_high_byte {
-                            self.x_offset = value as usize;
+                            self.vram_t.set_coarse_x((value & 0b_1111_1000) >> 3);
+                            self.fine_x = value & 0b_0000_0111;
                         } else {
-                            self.y_offset = value as usize;
+                            self.vram_t.set_coarse_y((value & 0b_1111_1000) >> 3);
+                            self.vram_t.set_fine_y(value & 0b_0000_0111);
                         };
                         self.ppu_addr_high_byte = !self.ppu_addr_high_byte;
                     },
                     MemoryEvent {operation: Write, address: 0x2006, value} => { // PPUADDR
                         if self.ppu_addr_high_byte {
-                            self.ppu_addr &= 0b_0000_0000_1111_1111;
-                            self.ppu_addr += ((value & 0b_0011_1111) as usize) << 8;
+                            let mut new_vram_t = self.vram_t.get_all();
+                            new_vram_t &= 0b_0000_0000_1111_1111;
+                            new_vram_t += ((value & 0b_0011_1111) as u16) << 8;
+                            self.vram_t.set_all(new_vram_t);
                         } else {
-                            self.ppu_addr &= 0b_0011_1111_0000_0000;
-                            self.ppu_addr += value as usize;
+                            let mut new_vram_t = self.vram_t.get_all();
+                            new_vram_t &= 0b_0111_1111_0000_0000;
+                            new_vram_t += (value as u16);
+                            self.vram_t.set_all(new_vram_t);
+                            self.vram_v = self.vram_t;
                         };
                         self.ppu_addr_high_byte = !self.ppu_addr_high_byte;
                     },
                     MemoryEvent {operation: Read, address: 0x2007, value: _} => { // PPUDATA
-                        let vram_data = self.ppu_memory.read(self.ppu_addr, 1) as u8;
+                        let vram_data = self.ppu_memory.read((self.vram_v.get_all() & 0x3FFF) as usize, 1) as u8;
                         self.increment_vram_address();
                         self.write_memory(0x2007, vram_data); // since read is offset by 1 cycle it makes our life easier
                         // TODO: for PAL region reads from pixel palette actually return instantly ;-;
                     },
                     MemoryEvent {operation: Write, address: 0x2007, value} => { // PPUDATA
-                        self.ppu_memory.write(self.ppu_addr, value);
+                        self.ppu_memory.write((self.vram_v.get_all() & 0x3FFF) as usize, value);
                         self.increment_vram_address();
                     },
 
@@ -105,9 +113,9 @@ impl PPU {
 
     fn increment_vram_address(&mut self) {
         if self.ppudata_write_down {
-            self.ppu_addr += 32;
+            self.vram_v.set_all(self.vram_v.get_all() + 32);
         } else {
-            self.ppu_addr += 1;
+            self.vram_v.set_all(self.vram_v.get_all() + 1);
         }
     }
 

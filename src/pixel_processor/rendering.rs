@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use minifb::{ Window, WindowOptions };
 
-use crate::pixel_processor::tile::PixelPalette;
+use crate::pixel_processor::tile::{PixelPalette, PixelPaletteColorIndex};
 use crate::pixel_processor::helper::get_actual_nametable_addr_and_tile_offset;
 
 use super::{ helper::overlay_sprite, tile::{self, Tile}, PPU };
@@ -39,21 +39,44 @@ impl PPU {
         }
     }
 
-    pub(super) fn render_bg_slice(&mut self, line: usize, slice: usize) {
+    pub(super) fn render_current_vram_slice(&mut self) {
+        let slice = self.vram_v.get_coarse_x() as usize;
+        let starting_slice = self.vram_t.get_coarse_x() as usize;
+        let current_line = ((self.vram_v.get_coarse_y() << 3) + self.vram_v.get_fine_y()) as usize;
+        let starting_line = ((self.vram_t.get_coarse_y() << 3) + self.vram_t.get_fine_y()) as usize;
+        let line = current_line - starting_line;
         for i in 0..8 {
-            let x = slice * 8 + i;
-            let (base_addr, tile_offset) = get_actual_nametable_addr_and_tile_offset(x + self.x_offset, line + self.y_offset, self.nametable_address);
-            let tile_pattern_id = self.ppu_memory.read(base_addr + tile_offset, 1);
-            let pixel_index = Tile::get_at(&self.ppu_memory, (x + self.x_offset) & 0b_0000_0111, (line + self.y_offset) & 0b_0000_0111, tile_pattern_id, self.bg_plane);
-            let color_palette = PixelPalette::get_from_addr_and_offset(&self.ppu_memory, base_addr, tile_offset);
+            let x = (slice - starting_slice) * 8 + i;
+            let (pixel_index, color_palette) = self.get_bg_pixel_at(i, line);
 
             self.main_framebuffer[x + line*256] = match pixel_index {
-                tile::PixelPaletteColorIndex::Background => color_palette.background,
-                tile::PixelPaletteColorIndex::Color1 => color_palette.color1,
-                tile::PixelPaletteColorIndex::Color2 => color_palette.color2,
-                tile::PixelPaletteColorIndex::Color3 => color_palette.color3,
+                PixelPaletteColorIndex::Background => color_palette.background,
+                PixelPaletteColorIndex::Color1 => color_palette.color1,
+                PixelPaletteColorIndex::Color2 => color_palette.color2,
+                PixelPaletteColorIndex::Color3 => color_palette.color3,
             };
         }
+    }
+
+    pub(super) fn get_bg_pixel_at(&self, fine_x: usize, fine_y: usize) -> (PixelPaletteColorIndex, PixelPalette) {
+        let fine_dot = fine_x & 0b_0000_0111;
+        let fine_line = fine_y & 0b_0000_0111;
+
+        let mut incremented_vram = self.vram_v;
+        let should_fetch_next = (self.fine_x as usize) + fine_dot > 7;
+        if should_fetch_next { // because coarse x and nametable x are noncontiguous
+            incremented_vram.increment_x();
+        }
+
+        let tile_address = 0x2000 + ((incremented_vram.get_all() as usize) & 0x0FFF);
+        let tile_pattern_id = self.ppu_memory.read(tile_address, 1);
+        let pixel_index = Tile::get_at(&self.ppu_memory, (fine_dot + (self.fine_x as usize)) & 0b_0000_0111, fine_line, tile_pattern_id, self.bg_plane, false, false);
+
+        let palette_base = tile_address & 0b_1111_11_00000_00000;
+        let palette_offset = tile_address & 0b_0000_00_11111_11111;
+        let color_palette = PixelPalette::get_from_addr_and_offset(&self.ppu_memory, palette_base, palette_offset);
+
+        return (pixel_index, color_palette);
     }
 
     pub(super) fn render_pattern_table(&mut self) {
