@@ -2,7 +2,7 @@ use std::{ process::exit, sync::mpsc::{Receiver, Sender, channel}, time::Instant
 
 use minifb::{ Window, Key };
 
-use crate::memory::*;
+use crate::{memory::*, pixel_processor::tile::PixelPaletteColorIndex};
 use ppu_memory::PPU_MEM;
 
 pub mod tile;
@@ -204,6 +204,14 @@ impl PPU {
                 }
             }
 
+            if self.bg_rendering && self.fg_rendering {
+                let (line, dot) = self.get_line_dot();
+                if 0 < line && line < 241 && dot < 256 {
+                    let actual_line = line - 1; // sprite 0 hit logic (and oam rendering) is delayed by 1 scanline
+                    self.check_sprite_0_hit_at(dot, actual_line);
+                }
+            }
+
             if self.bg_rendering || self.fg_rendering {
                 match self.get_line_dot() {
                     (0..240 | 261, 257) => {
@@ -242,6 +250,36 @@ impl PPU {
 
             self.dot += 1.;
         }
+    }
+
+    fn check_sprite_0_hit_at(&mut self, dot: usize, line: usize) -> () {
+        let (bg_pixel_index, _) = self.get_bg_pixel_at(dot, line);
+        match bg_pixel_index {
+            PixelPaletteColorIndex::Background => return,
+            PixelPaletteColorIndex::Color1 => (),
+            PixelPaletteColorIndex::Color2 => (),
+            PixelPaletteColorIndex::Color3 => (),
+        };
+
+        let sprite_pixel = self.get_sprite_0_color_at(dot, line);
+        match sprite_pixel {
+            PixelPaletteColorIndex::Background => (),
+            _ => {
+                self.set_sprite_0_hit();
+            }
+        }
+    }
+
+    fn get_sprite_0_color_at(&self, x: usize, y: usize) -> PixelPaletteColorIndex {
+        let sprite_x = self.oam_data[3] as usize;
+        let sprite_y = self.oam_data[0] as usize;
+        if x < sprite_x || x > (sprite_x+7) { return PixelPaletteColorIndex::Background };
+        if y < sprite_y || y > (sprite_y+7) { return PixelPaletteColorIndex::Background };
+        let tile_id = self.oam_data[1];
+        let reverse_h = self.oam_data[2] & 0b_0100_0000 != 0;
+        let reverse_v = self.oam_data[2] & 0b_1000_0000 != 0;
+        let tile = tile::Tile::get(&self.ppu_memory, tile_id as usize, self.fg_plane, reverse_h, reverse_v);
+        return tile.data[(x-sprite_x) + ((y-sprite_y)*8)];
     }
 
     fn call_nmi(&self) {
