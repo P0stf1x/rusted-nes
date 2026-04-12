@@ -18,7 +18,7 @@ impl CPU {
 
 macro_rules! ror {
     ($cpu:ident, $instruction:ident, $memory:ident) => {{
-        let value = $instruction.value.unwrap();
+        let value = $instruction.read($memory);
         let new_carry = (value & 0b_0000_0001) != 0;
         let result = (value >> 1) + ($cpu.C as u8) * 0b_1000_0000;
         $cpu.C = new_carry;

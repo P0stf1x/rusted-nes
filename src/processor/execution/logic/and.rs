@@ -20,8 +20,8 @@ impl CPU {
 }
 
 macro_rules! and {
-    ($cpu:ident, $instruction:ident) => {{
-        $cpu.store_a($cpu.get_a() & $instruction.value.unwrap());
+    ($cpu:ident, $instruction:ident, $memory:ident) => {{
+        $cpu.store_a($cpu.get_a() & $instruction.read($memory));
         $cpu.Z = $cpu.get_a() == 0;
         $cpu.N = $cpu.get_a() & 0b_1000_0000 != 0;
     }}
@@ -31,56 +31,56 @@ impl CPU {
     fn execute_and_imm(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_imm(&self, memory);
         inst.log(&self, "AND");
-        and!(self, inst);
+        and!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_and_zpg(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_zpg(&self, memory);
         inst.log(&self, "AND");
-        and!(self, inst);
+        and!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_and_zpgx(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_zpgx(&self, memory);
         inst.log(&self, "AND");
-        and!(self, inst);
+        and!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_and_abs(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_abs(&self, memory);
         inst.log(&self, "AND");
-        and!(self, inst);
+        and!(self, inst, memory);
         self.increment_pc(3);
     }
 
     fn execute_and_absx(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_absx(&self, memory);
         inst.log(&self, "AND");
-        and!(self, inst);
+        and!(self, inst, memory);
         self.increment_pc(3);
     }
 
     fn execute_and_absy(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_absy(&self, memory);
         inst.log(&self, "AND");
-        and!(self, inst);
+        and!(self, inst, memory);
         self.increment_pc(3);
     }
 
     fn execute_and_indirect_x(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_indirect_x(&self, memory);
         inst.log(&self, "AND");
-        and!(self, inst);
+        and!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_and_indirect_y(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_indirect_y(&self, memory);
         inst.log(&self, "AND");
-        and!(self, inst);
+        and!(self, inst, memory);
         self.increment_pc(2);
     }
 }

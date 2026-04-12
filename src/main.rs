@@ -4,10 +4,12 @@ use std::num::Wrapping;
 
 use crate::processor::*;
 use crate::memory::*;
+use crate::pixel_processor::*;
 
 mod processor;
 mod memory;
 mod logging;
+mod pixel_processor;
 
 fn main() {
     let mut is_raw_image = false;
@@ -19,16 +21,18 @@ fn main() {
             .add_option(&["--ines"], StoreFalse, "Parse as iNES rom (Default)")
             .add_option(&["--raw"], StoreTrue, "Parse as raw image");
         argparser.refer(&mut entry_point)
-            .add_option(&["-e", "--entry-point"], ParseOption, "Manually choose cpu entry point");
+            .add_option(&["-e", "--entry-point"], ParseOption, "Manually choose cpu entry point"); // HEX not supported
         argparser.refer(&mut file_path)
-            .add_argument("rom image", Store, "Path to rom image");
+            .add_argument("rom image", Store, "Path to rom image").required();
         argparser.parse_args_or_exit();
     }
     let mut memory;
+    let ppu_memory;
     if is_raw_image {
         memory = MEM::new_from(&file_path);
+        unimplemented!();
     } else {
-        memory = MEM::new_from_ines(&file_path);
+        (memory, ppu_memory) = MEM::new_from_ines(&file_path);
     }
     let mut cpu: CPU = CPU::new();
 
@@ -39,7 +43,7 @@ fn main() {
     }
     cpu.S = Wrapping(0xFDu8);
     cpu.I = true;
-    memory.data[0x2002] = 0b_1000_0000; // FIXME: hack to make cpu think it's always in vblank
+    // memory.data[0x2002] = 0b_1000_0000; // FIXME: hack to make cpu think it's always in vblank
 
     use std::io::Write;
     use std::fs;
@@ -54,8 +58,22 @@ fn main() {
         Err(_) => Ok(println!("No file")),
     };
 
+    // Memory pointer since in rust pointers aren't Sync/Send
+    let memory_pointer = MemPtrWrapper(&mut memory as *mut MEM);
+    let cpu_pointer = CPUPtrWrapper(&mut cpu as *mut CPU);
+
+    let (mut ppu, ppu_tx) = PPU::new(memory_pointer, ppu_memory, cpu_pointer);
+    memory.push_hook(MemoryOperation::Read, MemoryRegion::new(0x2000, 0x0008), ppu_tx.clone());
+    memory.push_hook(MemoryOperation::Write, MemoryRegion::new(0x2000, 0x0008), ppu_tx.clone());
+    memory.push_hook(MemoryOperation::Write, MemoryRegion::new(0x4014, 0x0001), ppu_tx.clone());
+    memory.push_hook(MemoryOperation::Read, MemoryRegion::new(0x4016, 0x0002), ppu_tx.clone());
+    memory.push_hook(MemoryOperation::Write, MemoryRegion::new(0x4016, 0x0002), ppu_tx.clone());
+
     loop {
-        if cpu.tick(&mut memory).is_err() {
+        ppu.tick();
+        ppu.tick();
+        ppu.tick();
+        if cpu.tick(&mut memory).is_err() { // emulator loop
             // TODO: use logger instead
             println!("");
             println!("-----------------------------");
@@ -63,7 +81,7 @@ fn main() {
             println!("{:#04X?}", cpu);
             println!("{:#04X}", memory.read(cpu.PC.0 as usize, 1));
             println!("-----------------------------");
-            panic!();
-        };
+            break;
+        }
     }
 }

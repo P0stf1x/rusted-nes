@@ -1,10 +1,17 @@
 #![allow(dead_code)]
 
+use ppu_memory::PPU_MEM;
+
 pub mod ines;
 pub mod mappers;
 mod combinatorics;
 
 pub use combinatorics::combine_operands;
+pub mod ppu_memory;
+
+mod hooks;
+
+pub use hooks::{ MemoryHook, MemoryOperation, MemoryEvent };
 
 pub const MEMORY_SIZE: usize = 0x10000;
 
@@ -14,6 +21,13 @@ pub struct MemoryRegion {
 }
 
 impl MemoryRegion {
+    pub fn new(start: usize, length: usize) -> Self {
+        return Self {
+            region_address: start,
+            region_size: length,
+        }
+    }
+
     pub fn intersects_region(&self, region: &MemoryRegion) -> bool {
         let region1_start = self.region_address;
         let region1_end = self.region_address + self.region_size - 1;
@@ -38,7 +52,7 @@ mod memory_region_test {
     fn test_intersection(addr1: usize, addr2: usize, size1: usize, size2: usize, expected_result: bool) {
         let a: MemoryRegion = MemoryRegion { region_address: addr1, region_size: size1 };
         let b: MemoryRegion = MemoryRegion { region_address: addr2, region_size: size2 };
-        
+
         assert_eq!(a.intersects_region(&b), expected_result);
     }
 
@@ -134,26 +148,40 @@ pub struct MEM {
     pub data: Vec<u8>,
     mirroring: Vec<MemoryMirror>,
     write_protection: Vec<WriteProtectedRegion>,
+    hooks: Vec<MemoryHook>
 }
 
 // Read/Write
 impl MEM {
-    pub fn read(&mut self, address: usize, size: usize) -> usize {
-        let mut val: usize = 0;
+    fn read_internal(&self, address: usize, size: usize, send_hooks: bool) -> usize {
+        let mut result: usize = 0;
         for i in 0..size {
             let mirrored_address = self.get_mirrored_address(address+i);
-            val += (self.data[mirrored_address] as usize) << 8*i
+            let value = self.data[mirrored_address];
+            if send_hooks {
+                for hook in self.get_hooks(MemoryOperation::Read, mirrored_address) {
+                    hook.send(mirrored_address, value);
+                };
+            }
+            result += (value as usize) << 8*i
         }
-        return val;
+        return result;
+    }
+
+    pub fn read(&self, address: usize, size: usize) -> usize {
+        self.read_internal(address, size, true)
     }
 
     pub fn read_no_hook(&mut self, address: usize, size: usize) -> usize {
-        self.read(address, size)
+        self.read_internal(address, size, false)
     }
 
     pub fn write(&mut self, address: usize, data: u8) {
-        if !self.is_protected(address) { // or should it check mirrored address?
-            let mirrored_address = self.get_mirrored_address(address);
+        for hook in self.get_hooks(MemoryOperation::Write, address) {
+            hook.send(address, data);
+        };
+        let mirrored_address = self.get_mirrored_address(address);
+        if !self.is_protected(mirrored_address) {
             self.data[mirrored_address] = data;
         }
     }
@@ -206,9 +234,9 @@ mod read_write_test {
         let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
 
         assert_eq!(test_memory.read(0x0000, 1), 0x00, "Couldn't prepare memory for test");
-        
+
         test_memory.write(0x0000, 0xff);
-        
+
         assert_eq!(test_memory.read(0x0000, 1), 0xff);
     }
 
@@ -217,9 +245,9 @@ mod read_write_test {
         let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
 
         assert_eq!(test_memory.read(0x0000, 2), 0x0000, "Couldn't prepare memory for test");
-        
+
         test_memory.write_bulk(0x0000, vec![0xff, 0xff]);
-        
+
         assert_eq!(test_memory.read(0x0000, 2), 0xffff);
     }
 }
@@ -232,6 +260,7 @@ impl MEM {
             data,
             mirroring: vec![],
             write_protection: vec![],
+            hooks: vec![],
         }
     }
 
@@ -248,7 +277,7 @@ impl MEM {
         return memory;
     }
 
-    pub fn new_from_ines(file_path: &String) -> Self {
+    pub fn new_from_ines(file_path: &String) -> (Self, PPU_MEM) {
         use std::fs;
 
         let data = fs::read(file_path)
@@ -260,7 +289,9 @@ impl MEM {
         println!("prg_rom size: {}, {} blocks", parsed_ines.prg_rom.len(), parsed_ines.prg_rom.len()/(16*1024));
         println!("chr_rom size: {}, {} blocks", parsed_ines.chr_rom.len(), parsed_ines.chr_rom.len()/(8*1024));
 
-        return mappers::map(parsed_ines);
+        let (memory, ppu_memory) = mappers::map(parsed_ines);
+
+        return (memory, ppu_memory);
     }
 }
 
@@ -324,7 +355,7 @@ mod mirroring_tests {
         assert_eq!(test_memory.data[0x0001], 0xAB);
         assert_eq!(test_memory.read(0x0001, 1), 0xAB);
     }
-    
+
     #[test]
     fn test_memory_mirroring() {
         let mut test_memory: MEM = MEM::new(MEMORY_SIZE);
@@ -438,6 +469,36 @@ mod mirroring_tests {
 
         assert_eq!(test_memory.get_mirrored_address(0x0000), 0x0000);
         assert_eq!(test_memory.get_mirrored_address(0x0001), 0x0000);
+
+        let mut test_memory1: MEM = MEM::new(MEMORY_SIZE);
+
+        test_memory1.push_mirrored_range(MemoryMirror{
+            physical_memory: MemoryRegion{
+                region_address: 0x0002,
+                region_size: 2,
+            },
+            mirrored_memory: MemoryRegion{
+                region_address: 0x0004,
+                region_size: 2,
+            },
+        }).unwrap();
+        test_memory1.push_mirrored_range(MemoryMirror{
+            physical_memory: MemoryRegion{
+                region_address: 0x0002,
+                region_size: 2,
+            },
+            mirrored_memory: MemoryRegion{
+                region_address: 0x0006,
+                region_size: 4,
+            },
+        }).unwrap();
+
+        assert_eq!(test_memory1.get_mirrored_address(0x0002), 0x0002);
+        assert_eq!(test_memory1.get_mirrored_address(0x0003), 0x0003);
+        assert_eq!(test_memory1.get_mirrored_address(0x0004), 0x0002);
+        assert_eq!(test_memory1.get_mirrored_address(0x0005), 0x0003);
+        assert_eq!(test_memory1.get_mirrored_address(0x0006), 0x0002);
+        assert_eq!(test_memory1.get_mirrored_address(0x0007), 0x0003);
     }
 }
 

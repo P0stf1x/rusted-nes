@@ -362,8 +362,14 @@ impl CPU {
         (Wrapping::<u16>(self.get_pc()) + Wrapping::<u16>(1)).0 as usize
     }
 
-    #[allow(dead_code)]
     pub fn nmi(&mut self, memory: &mut MEM) {
+        let return_address = self.get_pc();
+        let high_byte = (return_address >> 8) as u8;
+        let low_byte = return_address as u8;
+        self.push_stack(high_byte, memory);
+        self.push_stack(low_byte, memory);
+        self.B = false;
+        self.push_stack(self.store_status(), memory);
         let vector = memory.read(0xFFFA, 2);
         self.store_pc(vector as u16);
     }

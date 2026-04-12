@@ -14,10 +14,11 @@ impl CPU {
 }
 
 macro_rules! bit {
-    ($cpu:ident, $instruction:ident) => {{
-        $cpu.Z = ($cpu.A.0 & $instruction.value.unwrap()) == 0;
-        $cpu.V = ($instruction.value.unwrap() & 0b_0100_0000) != 0;
-        $cpu.N = ($instruction.value.unwrap() & 0b_1000_0000) != 0;
+    ($cpu:ident, $instruction:ident, $memory:ident) => {{
+        let value = $instruction.read($memory);
+        $cpu.Z = ($cpu.A.0 & value) == 0;
+        $cpu.V = (value & 0b_0100_0000) != 0;
+        $cpu.N = (value & 0b_1000_0000) != 0;
     }}
 }
 
@@ -25,14 +26,14 @@ impl CPU {
     fn execute_bit_zpg(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_zpg(&self, memory);
         inst.log(&self, "BIT");
-        bit!(self, inst);
+        bit!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_bit_abs(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_abs(&self, memory);
         inst.log(&self, "BIT");
-        bit!(self, inst);
+        bit!(self, inst, memory);
         self.increment_pc(3);
     }
 }

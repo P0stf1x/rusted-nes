@@ -1,5 +1,5 @@
 mod adc;
-mod sdc;
+mod sbc;
 mod cmp;
 mod cpx;
 mod cpy;

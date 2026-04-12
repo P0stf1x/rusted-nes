@@ -36,11 +36,10 @@ impl CPU {
         self.cycle_count += 1.;
         if self.cycle_count >= 29780.5 {
             self.cycle_count -= 29780.5;
-            self.sleep(29780);
         };
         match self.cpu_state {
             CpuState::Ready => {
-                let wait_time = Instruction::get(&self, memory).count_cycles();
+                let wait_time = Instruction::count_cycles(self.get_instr(memory));
                 self.cpu_state = CpuState::Waiting(wait_time as u8);
                 self.execute(memory)
             },
@@ -66,9 +65,9 @@ impl CPU {
                 let status = self.store_status();
 
                 // TODO: use logger instead of just printing
-                // 
-                println!("{:04X}  {:02X}                                        A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", self.PC.0, pc_data, self.A.0, self.X.0, self.Y.0, status, self.S.0);
-                
+                //
+                // println!("{:04X}  {:02X}                                        A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", self.PC.0, pc_data, self.A.0, self.X.0, self.Y.0, status, self.S.0);
+
                 #[allow(unreachable_patterns)] // In case of adding new opcodes to the enum
                 match operation {
 
@@ -109,11 +108,11 @@ impl CPU {
 
                     // INC/DEC
                     INC(memory_mode) => {Ok(self.execute_inc(memory_mode, memory))},
-                    INX(memory_mode) => {Ok(self.execute_inx(memory_mode))},
-                    INY(memory_mode) => {Ok(self.execute_iny(memory_mode))},
+                    INX(memory_mode) => {Ok(self.execute_inx(memory_mode, memory))},
+                    INY(memory_mode) => {Ok(self.execute_iny(memory_mode, memory))},
                     DEC(memory_mode) => {Ok(self.execute_dec(memory_mode, memory))},
-                    DEX(memory_mode) => {Ok(self.execute_dex(memory_mode))},
-                    DEY(memory_mode) => {Ok(self.execute_dey(memory_mode))},
+                    DEX(memory_mode) => {Ok(self.execute_dex(memory_mode, memory))},
+                    DEY(memory_mode) => {Ok(self.execute_dey(memory_mode, memory))},
 
                     // SHIFTS
                     ASL(memory_mode) => {Ok(self.execute_asl(memory_mode, memory))},

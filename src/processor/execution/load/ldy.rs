@@ -16,8 +16,8 @@ impl CPU {
 }
 
 macro_rules! ldy {
-    ($cpu:ident, $instruction:ident) => {{
-        let value = $instruction.value.unwrap();
+    ($cpu:ident, $instruction:ident, $memory:ident) => {{
+        let value = $instruction.read($memory);
         $cpu.store_y(value);
         $cpu.Z = $cpu.get_y() == 0;
         $cpu.N = $cpu.get_y() & 0b_1000_0000 != 0;
@@ -29,35 +29,35 @@ impl CPU {
     fn execute_ldy_imm(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_imm(&self, memory);
         inst.log(&self, "LDY");
-        ldy!(self, inst);
+        ldy!(self, inst, memory);
         self.increment_pc(2);
     }
-    
+
     fn execute_ldy_zpg(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_zpg(&self, memory);
         inst.log(&self, "LDY");
-        ldy!(self, inst);
+        ldy!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_ldy_zpgx(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_zpgx(&self, memory);
         inst.log(&self, "LDY");
-        ldy!(self, inst);
+        ldy!(self, inst, memory);
         self.increment_pc(2);
     }
 
     fn execute_ldy_abs(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_abs(&self, memory);
         inst.log(&self, "LDY");
-        ldy!(self, inst);
+        ldy!(self, inst, memory);
         self.increment_pc(3);
     }
 
     fn execute_ldy_absx(&mut self, memory: &mut MEM) {
         let inst = Instruction::get_absx(&self, memory);
         inst.log(&self, "LDY");
-        ldy!(self, inst);
+        ldy!(self, inst, memory);
         self.increment_pc(3);
     }
 }
@@ -84,7 +84,7 @@ mod ldy_tests {
         assert_eq!(test_cpu.N, false);
         assert_eq!(test_cpu.PC.0, 0x0002);
     }
-    
+
     #[test]
     fn test_lny_immediate_negative() {
         let mut test_cpu: CPU = CPU::new();
