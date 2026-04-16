@@ -1,6 +1,7 @@
 use argparse::{ ArgumentParser, StoreFalse, StoreTrue, Store, ParseOption };
 
 use std::num::Wrapping;
+use std::sync::OnceLock;
 
 use crate::processor::*;
 use crate::memory::*;
@@ -11,10 +12,13 @@ mod memory;
 mod logging;
 mod pixel_processor;
 
+static SHOULD_LOG: OnceLock<bool> = OnceLock::new();
+
 fn main() {
     let mut is_raw_image = false;
     let mut entry_point: Option<usize> = None;
     let mut file_path = String::new();
+    let mut should_log = false;
     { // Limits argparse borrows to this scope
         let mut argparser = ArgumentParser::new();
         argparser.refer(&mut is_raw_image)
@@ -22,10 +26,13 @@ fn main() {
             .add_option(&["--raw"], StoreTrue, "Parse as raw image");
         argparser.refer(&mut entry_point)
             .add_option(&["-e", "--entry-point"], ParseOption, "Manually choose cpu entry point"); // HEX not supported
+        argparser.refer(&mut should_log)
+            .add_option(&["--enable-logging"], StoreTrue, "Enable logging");
         argparser.refer(&mut file_path)
             .add_argument("rom image", Store, "Path to rom image").required();
         argparser.parse_args_or_exit();
     }
+    SHOULD_LOG.get_or_init(||should_log);
     let mut memory;
     let ppu_memory;
     if is_raw_image {
