@@ -28,12 +28,21 @@ impl PPU {
             let oam_palette_id = 4 + (self.oam_data[oam_sprite_id*4+2] & 0b_0000_0011) as usize;
             let palette = PixelPalette::get_by_id(&self.ppu_memory, oam_palette_id);
             let tile = Tile::get(&self.ppu_memory, oam_tile_id as usize, self.fg_plane, reverse_h, reverse_v);
-            let sprite = tile.rendered(palette);
             for y in 0..8 {     // assume sprite is always 8x8
-                for x in 0..8 {
-                    let screen_offset = 239.min(oam_sprite_y+y)*256 + 255.min(oam_sprite_x+x);
-                    let sprite_offset = y*8 + x;
-                    self.main_framebuffer[screen_offset] = sprite[sprite_offset];
+                let y_offset = oam_sprite_y+y+1;
+                if y_offset < 240 {
+                    for x in 0..8 {
+                        let x_offset = oam_sprite_x+x;
+                        if x_offset < 256 {
+                            let screen_offset = y_offset*256 + x_offset;
+                            match tile.data[x + y*8] {
+                                tile::PixelPaletteColorIndex::Background => (),
+                                tile::PixelPaletteColorIndex::Color1 => { self.main_framebuffer[screen_offset] = palette.color1 }
+                                tile::PixelPaletteColorIndex::Color2 => { self.main_framebuffer[screen_offset] = palette.color2 }
+                                tile::PixelPaletteColorIndex::Color3 => { self.main_framebuffer[screen_offset] = palette.color3 }
+                            }
+                        }
+                    }
                 }
             }
         }
