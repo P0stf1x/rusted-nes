@@ -33,9 +33,10 @@ impl CPU {
     }
 
     pub fn tick(&mut self, memory: &mut MEM) -> Result<(), ()> {
-        self.cycle_count += 1.;
-        if self.cycle_count >= 29780.5 {
-            self.cycle_count -= 29780.5;
+        self.cycle_count += 1;
+        if (!self.odd_frame && self.cycle_count >= 29781) || (self.odd_frame && self.cycle_count >= 29780) {
+            self.cycle_count = 0;
+            self.odd_frame = !self.odd_frame;
         };
         match self.cpu_state {
             CpuState::Ready => {

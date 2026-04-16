@@ -115,7 +115,8 @@ pub struct PPU {
     ppu_memory: PPU_MEM,
     memory_events_rx: Receiver<MemoryEvent>,
     cpu_pointer: CPUPtrWrapper,
-    dot: f64,
+    dot: u64,
+    odd_frame: bool,
     is_closed: bool,
     main_framebuffer: Vec<u32>,
     pattern_table_framebuffer: Vec<u32>,
@@ -146,7 +147,8 @@ impl PPU {
             ppu_memory,
             memory_events_rx,
             cpu_pointer,
-            dot: 0.,
+            dot: 0,
+            odd_frame: false,
             is_closed: false,
             main_framebuffer: vec![0; 256*240],
             pattern_table_framebuffer: vec![0; 256*128],
@@ -169,7 +171,7 @@ impl PPU {
     }
 
     fn get_line_dot(&self) -> (usize, usize) {
-        return (self.dot.div_euclid(341.) as usize, self.dot.rem_euclid(341.) as usize);
+        return (self.dot.div_euclid(341) as usize, self.dot.rem_euclid(341) as usize);
     }
 
     pub fn tick(&mut self) {
@@ -179,8 +181,9 @@ impl PPU {
 
             self.process_memory_events();
 
-            if self.dot > 89341.5 {
-                self.dot -= 89341.5;
+            if (!self.odd_frame && self.dot >= 89342) || (self.odd_frame && self.dot >= 89341) {
+                self.dot = 0;
+                self.odd_frame = !self.odd_frame;
                 if self.fg_rendering {
                     self.render_oam();
                 }
@@ -248,7 +251,7 @@ impl PPU {
                 self.clear_sprite_overflow();
             }
 
-            self.dot += 1.;
+            self.dot += 1;
         }
     }
 

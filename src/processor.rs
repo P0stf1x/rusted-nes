@@ -44,7 +44,9 @@ pub struct CPU {
     #[allow(dead_code)] // for future use
     settings: Settings,
     #[new(default)]
-    cycle_count: f64,
+    cycle_count: u64,
+    #[new(default)]
+    odd_frame: bool,
     #[new(default)]
     cpu_state: CpuState,
 }
