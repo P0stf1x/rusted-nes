@@ -40,131 +40,161 @@ impl Instruction {
         }
     }
 
-    pub fn count_cycles(instruction: u8) -> u64 {
-        let mut cycle_count: u64 = match Self::get_memory_mode(instruction) {
-            Implicit  => 2,
-            Acc       => 2,
-            Immediate => 2,
-            ZeroPage  => 3,
-            ZeroPageX => 4,
-            ZeroPageY => 4,
-            Relative  => 2, // Only in branch instructions // FIXME: +1 if branch taken // FIXME: +1 on page cross
-            Absolute  => 4,
-            AbsoluteX => 4, // FIXME: +1 on page cross
-            AbsoluteY => 4, // FIXME: +1 on page cross
-            Indirect  => 5,
-            IndirectX => 6,
-            IndirectY => 5, // FIXME: +1 on page cross
-        };
-        cycle_count += Self::is_rmw(instruction);
-        return cycle_count;
-    }
-
-    fn is_rmw(instruction: u8) -> u64 { // read/modify/write instruction
+    pub fn get_base_execution_time(instruction: u8) -> usize {
+        // should also add +1 on page cross and +1 if branch taken
         match instruction {
-            // ASL
-            0x06 => 2, 0x16 => 2, 0x0E => 2, 0x1E => 2,
-            // LSR
-            0x46 => 2, 0x56 => 2, 0x4E => 2, 0x5E => 2,
-            // ROL
-            0x26 => 2, 0x36 => 2, 0x2E => 2, 0x3E => 2,
-            // ROR
-            0x66 => 2, 0x76 => 2, 0x6E => 2, 0x7E => 2,
-            // INC
-            0xE6 => 2, 0xF6 => 2, 0xEE => 2, 0xFE => 2,
-            // DEC
-            0xC6 => 2, 0xD6 => 2, 0xCE => 2, 0xDE => 2,
-            // Else
-            _ => 0,
-        }
-    }
-
-    fn get_memory_mode(instruction: u8) -> MemoryMode {
-        // let instruction = cpu.get_instr_without_hook(memory);
-        match instruction { // Non non standard instructions
-            0x00 => return MemoryMode::Implicit,
-            0x20 => return MemoryMode::Absolute,
-            0x40 => return MemoryMode::Implicit,
-            0x60 => return MemoryMode::Implicit,
-
-            0x08 => return MemoryMode::Implicit,
-            0x28 => return MemoryMode::Implicit,
-            0x48 => return MemoryMode::Implicit,
-            0x68 => return MemoryMode::Implicit,
-            0x88 => return MemoryMode::Implicit,
-            0xA8 => return MemoryMode::Implicit,
-            0xC8 => return MemoryMode::Implicit,
-            0xE8 => return MemoryMode::Implicit,
-
-            0x18 => return MemoryMode::Implicit,
-            0x38 => return MemoryMode::Implicit,
-            0x58 => return MemoryMode::Implicit,
-            0x78 => return MemoryMode::Implicit,
-            0x98 => return MemoryMode::Implicit,
-            0xB8 => return MemoryMode::Implicit,
-            0xD8 => return MemoryMode::Implicit,
-            0xF8 => return MemoryMode::Implicit,
-
-            0x8A => return MemoryMode::Implicit,
-            0x9A => return MemoryMode::Implicit,
-            0xAA => return MemoryMode::Implicit,
-            0xBA => return MemoryMode::Implicit,
-            0xCA => return MemoryMode::Implicit,
-            0xEA => return MemoryMode::Implicit,
-            _ => ()
-        };
-        match instruction & 0b_0000_0011 {
-            0b01 => {
-                match (instruction >> 2) & 0b_0000_0111 {
-                    0b000 => MemoryMode::IndirectX,
-                    0b001 => MemoryMode::ZeroPage,
-                    0b010 => MemoryMode::Immediate,
-                    0b011 => MemoryMode::Absolute,
-                    0b100 => MemoryMode::IndirectY,
-                    0b101 => MemoryMode::ZeroPageX,
-                    0b110 => MemoryMode::AbsoluteX,
-                    0b111 => MemoryMode::AbsoluteY,
-                    _ => panic!("index out of bounds"),
-                }
-            },
-            0b10 => {
-                match instruction { // Non standard instructions
-                    0x96 => return MemoryMode::ZeroPageY,
-                    0xB6 => return MemoryMode::ZeroPageY,
-                    0xBE => return MemoryMode::AbsoluteY,
-                    _ => ()
-                };
-                match (instruction >> 2) & 0b_0000_0111 {
-                    0b000 => MemoryMode::Immediate,
-                    0b001 => MemoryMode::ZeroPage,
-                    0b010 => MemoryMode::Acc,
-                    0b011 => MemoryMode::Absolute,
-                    0b100 => panic!(),
-                    0b101 => MemoryMode::ZeroPageX,
-                    0b110 => panic!(),
-                    0b111 => MemoryMode::AbsoluteX,
-                    _ => panic!("index out of bounds"),
-                }
-            }
-            0b00 => {
-                match instruction { // Non standard instructions
-                    0x6C => return MemoryMode::Indirect,
-                    _ => ()
-                };
-                match (instruction >> 2) & 0b_0000_0111 {
-                    0b000 => MemoryMode::Immediate,
-                    0b001 => MemoryMode::ZeroPage,
-                    0b010 => panic!(),
-                    0b011 => MemoryMode::Absolute,
-                    0b100 => MemoryMode::Relative, // all the branch instructions
-                    0b101 => MemoryMode::ZeroPageX,
-                    0b110 => panic!(),
-                    0b111 => MemoryMode::AbsoluteX,
-                    _ => panic!("index out of bounds"),
-                }
-            }
-            0b11 => panic!("Instructions Group 4 unsupported"),
-            _ => panic!("index out of bounds"),
+            0x00 => 7,
+            0x01 => 6,
+            0x05 => 3,
+            0x06 => 5,
+            0x08 => 3,
+            0x09 => 2,
+            0x0A => 2,
+            0x0D => 4,
+            0x0E => 6,
+            0x10 => 2,
+            0x11 => 5,
+            0x15 => 4,
+            0x16 => 6,
+            0x18 => 2,
+            0x19 => 4,
+            0x1D => 4,
+            0x1E => 7,
+            0x20 => 6,
+            0x21 => 6,
+            0x24 => 3,
+            0x25 => 3,
+            0x26 => 5,
+            0x28 => 4,
+            0x29 => 2,
+            0x2A => 2,
+            0x2C => 4,
+            0x2D => 4,
+            0x2E => 6,
+            0x30 => 2,
+            0x31 => 5,
+            0x35 => 4,
+            0x36 => 6,
+            0x38 => 2,
+            0x39 => 4,
+            0x3D => 4,
+            0x3E => 7,
+            0x40 => 6,
+            0x41 => 6,
+            0x45 => 3,
+            0x46 => 5,
+            0x48 => 3,
+            0x49 => 2,
+            0x4A => 2,
+            0x4C => 3,
+            0x4D => 4,
+            0x4E => 6,
+            0x50 => 2,
+            0x51 => 5,
+            0x55 => 4,
+            0x56 => 6,
+            0x58 => 2,
+            0x59 => 4,
+            0x5D => 4,
+            0x5E => 7,
+            0x60 => 6,
+            0x61 => 6,
+            0x65 => 3,
+            0x66 => 5,
+            0x68 => 4,
+            0x69 => 2,
+            0x6A => 2,
+            0x6C => 5,
+            0x6D => 4,
+            0x6E => 6,
+            0x70 => 2,
+            0x71 => 5,
+            0x75 => 4,
+            0x76 => 6,
+            0x78 => 2,
+            0x79 => 4,
+            0x7D => 4,
+            0x7E => 7,
+            0x81 => 6,
+            0x84 => 3,
+            0x85 => 3,
+            0x86 => 3,
+            0x88 => 2,
+            0x8A => 2,
+            0x8C => 4,
+            0x8D => 4,
+            0x8E => 4,
+            0x90 => 2,
+            0x91 => 6,
+            0x94 => 4,
+            0x95 => 4,
+            0x96 => 4,
+            0x98 => 2,
+            0x99 => 5,
+            0x9A => 2,
+            0x9D => 5,
+            0xA0 => 2,
+            0xA1 => 6,
+            0xA2 => 2,
+            0xA4 => 3,
+            0xA5 => 3,
+            0xA6 => 3,
+            0xA8 => 2,
+            0xA9 => 2,
+            0xAA => 2,
+            0xAC => 4,
+            0xAD => 4,
+            0xAE => 4,
+            0xB0 => 2,
+            0xB1 => 5,
+            0xB4 => 4,
+            0xB5 => 4,
+            0xB6 => 4,
+            0xB8 => 2,
+            0xB9 => 4,
+            0xBA => 2,
+            0xBC => 4,
+            0xBD => 4,
+            0xBE => 4,
+            0xC0 => 2,
+            0xC1 => 6,
+            0xC4 => 3,
+            0xC5 => 3,
+            0xC6 => 5,
+            0xC8 => 2,
+            0xC9 => 2,
+            0xCA => 2,
+            0xCC => 4,
+            0xCD => 4,
+            0xCE => 6,
+            0xD0 => 2,
+            0xD1 => 5,
+            0xD5 => 4,
+            0xD6 => 6,
+            0xD8 => 2,
+            0xD9 => 4,
+            0xDD => 4,
+            0xDE => 7,
+            0xE0 => 2,
+            0xE1 => 6,
+            0xE4 => 3,
+            0xE5 => 3,
+            0xE6 => 5,
+            0xE8 => 2,
+            0xE9 => 2,
+            0xEA => 2,
+            0xEC => 4,
+            0xED => 4,
+            0xEE => 6,
+            0xF0 => 2,
+            0xF1 => 5,
+            0xF5 => 4,
+            0xF6 => 6,
+            0xF8 => 2,
+            0xF9 => 4,
+            0xFD => 4,
+            0xFE => 7,
+            _ => panic!(),
         }
     }
 
@@ -220,7 +250,10 @@ impl Instruction {
     pub fn get_absx(cpu: &CPU, memory: &mut MEM) -> Self {
         let (instruction, operand1, operand2) = cpu.get_instr_and_operands(memory);
         let memory_address = combine_operands(operand1, operand2);
+        let previous_page = memory_address/256;
         let offsetted_memory_address = (Wrapping::<u16>(memory_address) + Wrapping::<u16>(cpu.get_x() as u16)).0;
+        let new_page = offsetted_memory_address/256;
+        if new_page != previous_page { cpu.add_sleep_cycles(1); }
         let value = memory.read_no_hook(offsetted_memory_address as usize, 1) as u8;
         return Self { mode: AbsoluteX, instruction, operand1: Some(operand1), operand2: Some(operand2), value: Some(value), memory_address: Some(offsetted_memory_address), memory_indirect_address: None }
     }
@@ -228,7 +261,10 @@ impl Instruction {
     pub fn get_absy(cpu: &CPU, memory: &mut MEM) -> Self {
         let (instruction, operand1, operand2) = cpu.get_instr_and_operands(memory);
         let memory_address = combine_operands(operand1, operand2);
+        let previous_page = memory_address/256;
         let offsetted_memory_address = (Wrapping::<u16>(memory_address) + Wrapping::<u16>(cpu.get_y() as u16)).0;
+        let new_page = offsetted_memory_address/256;
+        if new_page != previous_page { cpu.add_sleep_cycles(1); }
         let value = memory.read_no_hook(offsetted_memory_address as usize, 1) as u8;
         return Self { mode: AbsoluteY, instruction, operand1: Some(operand1), operand2: Some(operand2), value: Some(value), memory_address: Some(offsetted_memory_address), memory_indirect_address: None }
     }
@@ -264,7 +300,10 @@ impl Instruction {
         let memory_low_byte_address = memory.read(memory_indirect_address as usize, 1) as u16;
         let memory_high_byte_address = memory.read((Wrapping::<u8>(memory_indirect_address) + Wrapping::<u8>(1)).0 as usize, 1) as u16;
         let memory_address = ((memory_high_byte_address << 8) + memory_low_byte_address) as u16;
+        let previous_page = memory_address/256;
         let offsetted_memory_address = (Wrapping::<u16>(memory_address) + Wrapping::<u16>(cpu.get_y() as u16)).0;
+        let new_page = offsetted_memory_address/256;
+        if new_page != previous_page { cpu.add_sleep_cycles(1); }
         let value = memory.read_no_hook(offsetted_memory_address as usize, 1) as u8;
         return Self { mode: IndirectY, instruction, operand1: Some(memory_indirect_address), operand2: None, value: Some(value), memory_address: Some(offsetted_memory_address), memory_indirect_address: Some(memory_indirect_address) }
     }

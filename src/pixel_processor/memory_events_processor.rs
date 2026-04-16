@@ -83,6 +83,14 @@ impl PPU {
                     },
 
                     MemoryEvent {operation: Write, address: 0x4014, value} => { // OAMDMA
+                        unsafe {
+                            let dma_sleep_amount = if (*self.cpu_pointer.0).is_odd_frame() {
+                                514
+                            } else {
+                                513
+                            };
+                            (*self.cpu_pointer.0).add_sleep_cycles(dma_sleep_amount);
+                        }
                         let page = (value as usize) << 8;
                         for address_offset in 0..=0xFF {
                             self.oam_data[address_offset] = unsafe {

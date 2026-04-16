@@ -9,7 +9,11 @@ impl CPU {
         inst.log(&self, caller);
         self.increment_pc(2);
         if result {
+            self.add_sleep_cycles(1);
+            let previous_page = self.get_pc()/256;
             self.offset_pc(offset);
+            let new_page = self.get_pc()/256;
+            if previous_page != new_page { self.add_sleep_cycles(1); }
         }
     }
 

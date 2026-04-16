@@ -40,9 +40,11 @@ impl CPU {
         };
         match self.cpu_state {
             CpuState::Ready => {
-                let wait_time = Instruction::count_cycles(self.get_instr(memory));
-                self.cpu_state = CpuState::Waiting(wait_time as u8);
-                self.execute(memory)
+                let opcode = self.get_instr(memory);
+                let wait_time = Instruction::get_base_execution_time(opcode);
+                self.add_sleep_cycles(wait_time);
+                let result = self.execute(memory);
+                return result;
             },
             CpuState::Waiting(cycles_left) => {
                 if cycles_left > 1 {

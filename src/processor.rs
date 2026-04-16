@@ -54,7 +54,7 @@ pub struct CPU {
 #[derive(Debug)]
 #[derive(PartialEq, Eq)]
 pub enum CpuState {
-    Waiting(u8),
+    Waiting(usize),
     Ready,
 }
 
@@ -326,6 +326,19 @@ impl CPU {
 }
 
 impl CPU {
+    #[allow(invalid_reference_casting)]
+    pub fn add_sleep_cycles(&self, cycles: usize) {
+        // interior mutability for easier access across the code without passing mutable reference every time
+        // nothing could possibly go wrong I think
+        unsafe {
+            let ptr = &self.cpu_state as *const CpuState as *mut CpuState;
+            *ptr = match self.cpu_state {
+                CpuState::Waiting(left) => CpuState::Waiting(cycles + left),
+                CpuState::Ready => CpuState::Waiting(1),
+            }
+        }
+    }
+
     pub fn push_stack(&mut self, data: u8, memory: &mut MEM) {
         memory.write(0x0100 + self.S.0 as usize, data);
         self.decrement_s();
@@ -422,6 +435,7 @@ impl CPU {
     pub fn store_s(&mut self, value: u8) {self.S = Wrapping(value)}
     pub fn increment_s(&mut self) {self.S += 1}
     pub fn decrement_s(&mut self) {self.S -= 1}
+    pub fn is_odd_frame(&self) -> bool {self.odd_frame}
 }
 
 #[cfg(test)]
