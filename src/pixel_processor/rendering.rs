@@ -49,16 +49,16 @@ impl PPU {
     }
 
     pub(super) fn render_current_vram_slice(&mut self) {
-        let slice = self.vram_v.get_coarse_x() as usize;
+        let nametable_h_changed = self.vram_v.get_nametable_h() != self.vram_t.get_nametable_h();
+        let current_slice = (self.vram_v.get_coarse_x() as usize) + { if nametable_h_changed { 1 << 5 } else { 0 } };
         let starting_slice = self.vram_t.get_coarse_x() as usize;
-        let current_line = ((self.vram_v.get_coarse_y() << 3) + self.vram_v.get_fine_y()) as usize;
-        let starting_line = ((self.vram_t.get_coarse_y() << 3) + self.vram_t.get_fine_y()) as usize;
-        let line = current_line - starting_line;
+        let fine_y = self.vram_v.get_fine_y() as usize;
         for i in 0..8 {
-            let x = (slice - starting_slice) * 8 + i;
-            let (pixel_index, color_palette) = self.get_bg_pixel_at(i, line);
+            let x = ((current_slice - starting_slice) * 8 + i) % 256;
+            let (pixel_index, color_palette) = self.get_bg_pixel_at(i, fine_y);
 
-            self.main_framebuffer[x + line*256] = match pixel_index {
+            let (draw_y, _) = self.get_line_dot();
+            self.main_framebuffer[x + draw_y*256] = match pixel_index {
                 PixelPaletteColorIndex::Background => color_palette.background,
                 PixelPaletteColorIndex::Color1 => color_palette.color1,
                 PixelPaletteColorIndex::Color2 => color_palette.color2,
